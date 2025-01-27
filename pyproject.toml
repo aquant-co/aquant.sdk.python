@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "aquant-auth-api"
+name = "aquant-sdk-python"
 version = "0.1.0"
-description = "aquant.auth.api is a service that manages tokens for external use"
+description = "aquant.sdk.python is a software developer kit for aquant market data"
 authors = ["Davi Ferreira <academic.dave.ito@gmail.com>"]
 license = "MIT"
 readme = "README.md"
@@ -34,28 +34,31 @@ passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 bcrypt = "4.0.1"
 aioredis = "^2.0.1"
 redis = "^5.2.1"
+pandas = "^2.2.3"
+setuptools = "^75.8.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.8.6"
 autopep8 = "^2.3.1"
+pytest = "^8.3.4"
 
 [tool.ruff]
 line-length = 88
-select = ["E", "F", "B", "I", "UP"]  # Estilo, imports, bugbear, etc.
-ignore = ["E501"]  # Ignora comprimento de linha
+select = ["E", "F", "B", "I", "UP"]
+ignore = ["E501"]
 target-version = "py313"
 
-[tool.ruff.isort]  # Configurações para organização de imports
+[tool.ruff.isort]
 known-first-party = ["app"]
 combine-as-imports = true
-force-single-line = false  # Ajuste para evitar linhas quebradas desnecessariamente
+force-single-line = false 
 
 [tool.black]
 line-length = 88
 target-version = ['py313']
 
 [tool.isort]
-profile = "black"  # Mantém compatibilidade com Black
+profile = "black"
 line_length = 88
 
 [build-system]

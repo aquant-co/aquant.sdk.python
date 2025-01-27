@@ -1,0 +1,12 @@
+include README.md
+include requirements.txt
+
+exclude tests/*
+exclude *.pyc
+exclude .gitignore
+exclude .env
+exclude .devcontainer
+exclude .gitlint
+exclude .github
+
+recursive-include app/ *

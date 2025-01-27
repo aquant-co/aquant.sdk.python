@@ -162,3 +162,5 @@ Pipfile.lock
 .cloudignore
 .aws/
 azure/
+
+.qodo
