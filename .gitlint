@@ -1,0 +1,9 @@
+[general]
+# Ignorar commits temporários como WIP
+ignore=body-is-missing
+
+[title-max-length]
+line-length=72
+
+[title-match-regex]
+regex=^(feat|fix|chore|docs|style|refactor|test|perf|ci)(\(.+\))?: .+$

@@ -1,0 +1,164 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environment directories
+venv/
+.env/
+.env.*
+*.env
+*.venv
+Pipfile.lock
+poetry.lock
+
+# Local development environment
+local_settings.py
+settings.yaml
+settings.local.yaml
+
+# Logs and output files
+*.log
+logs/
+*.out
+*.pid
+*.seed
+*.cover
+
+# Database and SQL files
+*.sqlite3
+*.db
+*.sql
+
+# Test coverage
+htmlcov/
+.coverage
+*.cover
+.cache/
+nosetests.xml
+coverage.xml
+*.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# IDE and editor settings
+.vscode/
+.idea/
+*.iml
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Docker
+.dockerignore
+Dockerfile*
+# docker-compose*
+*.tar
+
+# FastAPI-specific
+instance/
+*.pid
+*.seed
+*.bak
+alembic/
+alembic.ini
+migrations/
+
+# Cache
+*.cache
+*.pycache/
+.cache/
+__pycache__/
+
+# Python packaging
+*.egg-info/
+*.egg
+*.pyo
+dist/
+build/
+site-packages/
+
+# Dependencies
+poetry.lock
+Pipfile.lock
+
+# AWS & Google Cloud
+*.tfstate
+*.tfstate.backup
+.terraform/
+.cloud/
+*.pem
+*.key
+*.json
+*.boto
+
+# Certificates
+*.crt
+*.csr
+*.key
+*.p12
+*.pfx
+
+# Environment Secrets
+secrets.env
+.envrc
+*.pem
+*.key
+
+# Kubernetes
+*.yaml
+*.yml
+.kube/
+
+# Logs and Debug
+*.log
+*.trace
+
+# CI/CD
+.gitlab-ci.yml
+
+# Node.js (caso use com WebView ou scripts)
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn.lock
+
+# Prettier / Formatters
+.prettierignore
+
+# Backstage.io
+.backstage/
+
+# Datadog-specific
+datadog.yaml
+logs/
+trace-logs/
+
+# Editor backups and swap files
+*.swp
+*.swo
+*.bak
+
+# Python dependencies
+pip-log.txt
+pip-delete-this-directory.txt
+poetry.lock
+Pipfile.lock
+
+# Generated files
+*.csv
+*.tsv
+*.tmp
+*.dump
+*.bak
+*.sql
+
+# Cloud Storage
+.gcloudignore
+.cloudignore
+.aws/
+azure/

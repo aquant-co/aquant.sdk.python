@@ -1,0 +1,56 @@
+{
+  "name": "Aquant Authentication",
+  "dockerComposeFile": ["docker-compose.yml"],
+  "service": "aquant-auth-api",
+  "workspaceFolder": "/app",
+  "customizations": {
+    "vscode": {  
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/bash",
+    "editor.formatOnSave": true,
+    "python.formatting.provider": "black",
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit",
+      "source.fixAll.pylance": "explicit",
+      "source.fixAll": "always"
+    }
+  },
+  "extensions": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-azuretools.vscode-docker",
+    "redhat.vscode-yaml",
+    "ms-toolsai.jupyter",
+    "eamodio.gitlens",
+    "ms-vscode-remote.remote-containers",
+    "github.vscode-pull-request-github",
+    "mhutchie.git-graph",
+    "ms-vscode.cpptools",
+    "foxundermoon.shell-format",
+    "EditorConfig.EditorConfig",
+    "VisualStudioExptTeam.vscodeintellicode",
+    "donjayamanne.githistory",
+    "njpwerner.autodocstring",
+    "rangav.vscode-thunder-client",
+    "hbenl.vscode-test-explorer",
+    "yzhang.markdown-all-in-one",
+    "ms-vscode-remote.vscode-remote-extensionpack",
+    "ms-vscode.vscode-typescript-next",
+    "mutantdino.resourcemonitor",
+    "mongodb.mongodb-vscode",
+    "graphql.vscode-graphql"
+  ]
+    } 
+  },
+  "remoteUser": "root",
+  "postCreateCommand": "poetry install",
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": {
+      "label": "Aquant Authentication API"
+    }
+  },
+  "mounts": ["source=${localWorkspaceFolder},target=/app,type=bind"]
+}

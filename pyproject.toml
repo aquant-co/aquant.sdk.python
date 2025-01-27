@@ -1,0 +1,63 @@
+[tool.poetry]
+name = "aquant-auth-api"
+version = "0.1.0"
+description = "aquant.auth.api is a service that manages tokens for external use"
+authors = ["Davi Ferreira <academic.dave.ito@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.13" 
+fastapi = "^0.115.6"
+pydantic = {extras = ["email"], version = "^2.10.5"}
+dependency-injector = "^4.44.0"
+aiohttp = "^3.11.11"
+pydantic-settings = "^2.7.1"
+sqlalchemy = "^2.0.36"
+pre-commit = "^4.0.1"
+gitlint = "^0.19.1"
+uvicorn = "^0.34.0"
+asyncpg = "^0.30.0"
+python-json-logger = "^3.2.1"
+greenlet = "^3.1.1"
+httpx = "^0.28.1"
+autoflake = "^2.3.1"
+flake8 = "^7.1.1"
+mccabe = "^0.7.0"
+pyflakes = "^3.2.0"
+pycodestyle = "^2.12.1"
+alembic = "^1.14.0"
+psycopg2 = "^2.9.10"
+pyjwt = "^2.10.1"
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+bcrypt = "4.0.1"
+aioredis = "^2.0.1"
+redis = "^5.2.1"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.8.6"
+autopep8 = "^2.3.1"
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "B", "I", "UP"]  # Estilo, imports, bugbear, etc.
+ignore = ["E501"]  # Ignora comprimento de linha
+target-version = "py313"
+
+[tool.ruff.isort]  # Configurações para organização de imports
+known-first-party = ["app"]
+combine-as-imports = true
+force-single-line = false  # Ajuste para evitar linhas quebradas desnecessariamente
+
+[tool.black]
+line-length = 88
+target-version = ['py313']
+
+[tool.isort]
+profile = "black"  # Mantém compatibilidade com Black
+line_length = 88
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
