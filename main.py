@@ -12,7 +12,7 @@ consumer = RedisConsumer(redis_client=redis_client, processor=processor)
 
 start_time = time.perf_counter()
 
-result_df = consumer.consume(keys=["BBAS3_Offer"])
+result_df = consumer.consume(keys=["VALE3F_Offer"])
 
 end_time = time.perf_counter()
 
