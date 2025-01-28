@@ -1,12 +1,33 @@
 include README.md
+include LICENSE
+include pyproject.toml
+include poetry.lock
+include Makefile
+include setup.py
+
 include requirements.txt
+include .gitignore
+
+exclude *.pyc
+exclude *.pyo
+exclude __pycache__/*
+exclude .env
+exclude .ruff_cache/*
+exclude .devcontainer/*
+exclude .qodo
+exclude .pytest_cache/*
+exclude .vscode/*
+exclude .github/*
+exclude .git/*
+exclude .gitlint
+
+recursive-include aquant_sdk *
+recursive-exclude aquant_sdk/__pycache__ *
+
 
 exclude tests/*
-exclude *.pyc
-exclude .gitignore
-exclude .env
-exclude .devcontainer
-exclude .gitlint
-exclude .github
+recursive-exclude tests *
 
-recursive-include app/ *
+
+exclude *~
+exclude *.swp

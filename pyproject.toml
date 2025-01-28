@@ -41,6 +41,7 @@ setuptools = "^75.8.0"
 ruff = "^0.8.6"
 autopep8 = "^2.3.1"
 pytest = "^8.3.4"
+pytest-cov = "^4.1.0" # Cobertura de testes
 
 [tool.ruff]
 line-length = 88
@@ -62,5 +63,28 @@ profile = "black"
 line_length = 88
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.5.0", "setuptools", "wheel"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+# Adicionando entrypoints para uso como CLI, caso necessário.
+aquant-sdk-cli = "aquant_sdk.main:cli"
+
+[tool.poetry.extras]
+# Definição de dependências extras opcionais para cenários específicos
+all = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+    "autopep8",
+]
+
+# Incluindo MANIFEST.in para arquivos extras como README, LICENSE
+[tool.poetry.include]
+README.md = "README.md"
+LICENSE = "LICENSE"
+
+# Configurações específicas de build
+[tool.setuptools]
+include_package_data = true
+zip_safe = false
