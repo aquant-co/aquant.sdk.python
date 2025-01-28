@@ -1,69 +1,97 @@
 import json
 
+import numpy as np
 import pandas as pd
 
 from aquant_sdk.redis.client import RedisClient
-from aquant_sdk.redis.processor import MessageProcessor
+from aquant_sdk.redis.processor import BufferedMessageProcessor
 
 
 class RedisConsumer:
-    def __init__(self, redis_client: RedisClient, processor: MessageProcessor) -> None:
+    def __init__(
+        self, redis_client: RedisClient, processor: BufferedMessageProcessor
+    ) -> None:
         """
         Inicializa o consumidor de mensagens do Redis.
 
         Args:
             redis_client (RedisClient): Cliente Redis.
-            processor (MessageProcessor): Processador de mensagens.
+            processor (BufferedMessageProcessor): Processador de mensagens.
         """
         self.redis_client = redis_client.get_client()
         self.processor = processor
         self._stop = False
+        self._columns = ["key", "entry_time", "price", "quantity"]
 
     def consume(self, keys):
         """
-        Consome dados dos Sorted Sets no Redis com base nas chaves fornecidas.
+        Consome mensagens dos conjuntos ordenados no Redis e retorna um DataFrame.
 
         Args:
-            keys (list[str]): Lista de chaves a serem consultadas.
+            keys (list): Lista de chaves no Redis a serem consumidas.
 
         Returns:
-            pd.DataFrame: DataFrame com os dados coletados.
+            pd.DataFrame: DataFrame com os dados processados.
         """
         if not keys:
-            print("Nenhuma chave fornecida para consumo. Retornando vazio.")
-            return pd.DataFrame(columns=["key", "entry_time", "price", "quantity"])
+            return pd.DataFrame(columns=self._columns)
 
-        results = []
+        max_entries = 10000
+        key_arr = np.empty(max_entries, dtype=object)
+        time_arr = np.empty(max_entries, dtype=object)
+        price_arr = np.empty(max_entries, dtype=np.float64)
+        qty_arr = np.empty(max_entries, dtype=np.float64)
+        brk_arr = np.empty(max_entries, dtype=np.int64)
+        fk_order_id_arr = np.empty(max_entries, dtype=object)
+        idx = 0
 
-        try:
-            for key in keys:
-                print(f"Lendo dados da chave: {key}")
-
-                raw_entries = self.redis_client.zrange(key, 0, -1)
+        for key in keys:
+            try:
+                pipe = self.redis_client.pipeline()
+                pipe.zrange(key, 0, -1)
+                raw_entries = pipe.execute()[0]
 
                 if not raw_entries:
-                    print(f"Nenhum dado encontrado para {key}")
                     continue
 
                 for entry in raw_entries:
+                    if idx >= max_entries:
+                        max_entries *= 2
+                        key_arr.resize(max_entries, refcheck=False)
+                        time_arr.resize(max_entries, refcheck=False)
+                        price_arr.resize(max_entries, refcheck=False)
+                        qty_arr.resize(max_entries, refcheck=False)
                     try:
-                        entry_data = json.loads(entry.decode())
-                        entry_data["key"] = key
-                        results.append(entry_data)
-                        self.processor.process(entry_data)
-                    except json.JSONDecodeError:
-                        print(f"Erro ao decodificar JSON da chave: {key}")
+                        data = json.loads(entry.decode("utf-8"))
+                        key_arr[idx] = key
+                        time_arr[idx] = data["entry_time"]
+                        price_arr[idx] = data["price"]
+                        qty_arr[idx] = data["quantity"]
+                        idx += 1
+                    except (KeyError, json.JSONDecodeError):
+                        continue
 
-            print("Processamento sob demanda concluído.")
-            return (
-                pd.DataFrame(results)
-                if results
-                else pd.DataFrame(columns=["key", "entry_time", "price", "quantity"])
-            )
+                    self.processor.process(data)
 
-        except Exception as e:
-            print(f"Erro durante o consumo de mensagens: {e}")
-            return pd.DataFrame(columns=["key", "entry_time", "price", "quantity"])
+            except Exception as e:
+                print(f"Erro ao processar chave '{key}': {str(e)}")
+                continue
+
+        if idx == 0:
+            return pd.DataFrame(columns=self._columns)
+
+        return pd.DataFrame(
+            {
+                "key": pd.Series(key_arr[:idx], dtype="category"),
+                "entry_time": pd.to_datetime(
+                    time_arr[:idx], format="%Y%m%d%H%M%S.%f", errors="coerce"
+                ),
+                "price": price_arr[:idx],
+                "quantity": qty_arr[:idx],
+                "broker": brk_arr[:idx],
+                "fk_order_id": fk_order_id_arr[:idx],
+            }
+        )
 
     def stop(self):
         """
@@ -84,7 +112,7 @@ class RedisConsumerBuilder:
         self._redis_client = redis_client
         return self
 
-    def with_processor(self, processor: MessageProcessor):
+    def with_processor(self, processor: BufferedMessageProcessor):
         self._processor = processor
         return self
 

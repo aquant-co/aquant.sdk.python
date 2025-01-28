@@ -20,7 +20,7 @@ elapsed_time_s = end_time - start_time
 elapsed_time_ms = elapsed_time_s * 1000
 elapsed_time_us = elapsed_time_ms * 1000
 
-print(result_df)
+# print(result_df)
 print(
     f"\nTempo de execução: {elapsed_time_s:.6f} segundos | {elapsed_time_ms:.3f} ms | {elapsed_time_us:.0f} µs"
 )

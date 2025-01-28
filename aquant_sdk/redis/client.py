@@ -14,7 +14,9 @@ class RedisClient:
         self.redis_url = redis_url
         self.use_tls = use_tls
         self.pool = self._create_connection_pool()
-        self.client = redis.StrictRedis(connection_pool=self.pool)
+        self.client = redis.StrictRedis(
+            connection_pool=self.pool, decode_responses=False
+        )
 
     def _create_connection_pool(self):
         """
