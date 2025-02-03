@@ -10,7 +10,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.13" 
+python = ">=3.10" 
 fastapi = "^0.115.6"
 pydantic = {extras = ["email"], version = "^2.10.5"}
 dependency-injector = "^4.44.0"
