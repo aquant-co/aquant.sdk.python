@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from aquant_sdk.api.base.types import RequestDataType
+from aquant.api.base.types import RequestDataType
 
 
 class HTTPClientInterface(ABC):

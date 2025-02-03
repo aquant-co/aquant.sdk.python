@@ -1,8 +1,8 @@
 import logging
 import sys
 
-from aquant_sdk.api.base.interfaces import LoggerInterface
-from aquant_sdk.api.base.utils import JsonLogFormatter
+from aquant.api.base.interfaces import LoggerInterface
+from aquant.api.base.utils import JsonLogFormatter
 
 
 class Logger(LoggerInterface):

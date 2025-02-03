@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from aquant_sdk.redis.consumer import RedisConsumer
+from aquant.redis.consumer import RedisConsumer
 
 
 def test_redis_consumer_on_demand():

@@ -1,6 +1,6 @@
 import pytest
 
-from aquant_sdk.redis.processor import (
+from aquant.redis.processor import (
     LogMessageProcessor,
     MessageProcessor,
     PrintMessageProcessor,

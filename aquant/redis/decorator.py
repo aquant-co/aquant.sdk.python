@@ -1,4 +1,4 @@
-from aquant_sdk.redis.processor import MessageProcessor
+from aquant.redis.processor import MessageProcessor
 
 
 class LoggingProcessor(MessageProcessor):

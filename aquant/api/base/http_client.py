@@ -2,13 +2,13 @@ from typing import Any
 
 from httpx import AsyncClient, HTTPStatusError, RequestError, TimeoutException
 
-from aquant_sdk.api.base.http_exceptions import HTTPException
-from aquant_sdk.api.base.interfaces import (
+from aquant.api.base.http_exceptions import HTTPException
+from aquant.api.base.interfaces import (
     HTTPClientInterface,
     HTTPExceptionInterface,
     LoggerInterface,
 )
-from aquant_sdk.api.base.types import RequestDataType
+from aquant.api.base.types import RequestDataType
 
 
 class HTTPClient(HTTPClientInterface):

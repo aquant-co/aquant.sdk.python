@@ -3,9 +3,11 @@ name = "aquant-sdk-python"
 version = "0.1.0"
 description = "aquant.sdk.python is a software developer kit for aquant market data"
 authors = ["Davi Ferreira <academic.dave.ito@gmail.com>"]
-license = "MIT"
+license = "UNLICENSED"
 readme = "README.md"
-package-mode = false
+packages = [
+    { include = "aquant" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.13" 
@@ -67,8 +69,8 @@ line_length = 88
 requires = ["poetry-core>=1.5.0", "setuptools", "wheel"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.poetry.scripts]
-aquant-sdk-cli = "aquant_sdk.main:cli"
+# [tool.poetry.scripts]
+# aquant-sdk-cli = "aquant_sdk.main:cli"
 
 [tool.poetry.extras]
 all = [

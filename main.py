@@ -1,8 +1,8 @@
 import time
 
-from aquant_sdk.redis.client import RedisClient
-from aquant_sdk.redis.consumer import RedisConsumer
-from aquant_sdk.redis.processor import PrintMessageProcessor
+from aquant.redis.client import RedisClient
+from aquant.redis.consumer import RedisConsumer
+from aquant.redis.processor import PrintMessageProcessor
 
 redis_client = RedisClient()
 
