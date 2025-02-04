@@ -2,7 +2,7 @@ from typing import Any
 
 from httpx import HTTPStatusError, RequestError, TimeoutException
 
-from aquant_sdk.api.base.interfaces import HTTPExceptionInterface, LoggerInterface
+from aquant.api.base.interfaces import HTTPExceptionInterface, LoggerInterface
 
 
 class HTTPException(HTTPExceptionInterface):

@@ -1,6 +1,6 @@
 import redis
 
-from aquant_sdk.settings import settings
+from aquant.settings import settings
 
 
 class RedisClient:

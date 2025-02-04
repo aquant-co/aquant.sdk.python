@@ -1,8 +1,8 @@
 from collections.abc import Callable
 from functools import lru_cache
 
-from aquant_sdk.api.base.interfaces import HTTPClientInterface
-from aquant_sdk.settings import settings
+from aquant.api.base.interfaces import HTTPClientInterface
+from aquant.settings import settings
 
 
 def lru_cache_wrapper(maxsize: int = 1000) -> Callable:

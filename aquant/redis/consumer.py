@@ -3,8 +3,8 @@ import json
 import numpy as np
 import pandas as pd
 
-from aquant_sdk.redis.client import RedisClient
-from aquant_sdk.redis.processor import BufferedMessageProcessor
+from aquant.redis.client import RedisClient
+from aquant.redis.processor import BufferedMessageProcessor
 
 
 class RedisConsumer:

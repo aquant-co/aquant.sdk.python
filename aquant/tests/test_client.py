@@ -1,5 +1,5 @@
-from aquant_sdk.redis import RedisClient, RedisClientFactory
-from aquant_sdk.settings import settings
+from aquant.redis import RedisClient, RedisClientFactory
+from aquant.settings import settings
 
 
 def test_redis_client_initialization():

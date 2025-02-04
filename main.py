@@ -4,6 +4,10 @@
 
 # Preço, volume, abertura e fechamento, informações do ativo, etc...
 
+# from aquant.redis.client import RedisClient
+# from aquant.redis.consumer import RedisConsumer
+# from aquant.redis.processor import PrintMessageProcessor
+
 # """
 
 # import asyncio
@@ -47,8 +51,8 @@ import pandas as pd
 from nats.aio.client import Client as NATS
 from nats.aio.errors import ErrNoServers, ErrTimeout
 
-from aquant_sdk.core.utils import parse_trades_binary_to_dataframe
-from aquant_sdk.settings import settings
+from aquant.core.utils import parse_trades_binary_to_dataframe
+from aquant.settings import settings
 
 
 # -----------------------------------------------------------------------------
@@ -67,7 +71,7 @@ async def test_marketdata_request() -> pd.DataFrame:
     options = {
         "servers": [settings.NATS_URL],
         "user": settings.AQUANT_NATS_USER,
-        "password": settings.AQAUNT_NATS_PASSWORD,
+        "password": settings.AQUANT_NATS_PASSWORD,
     }
 
     try:
