@@ -2,48 +2,16 @@ services:
   aquant-sdk-python:
     build:
       context: ..
-      dockerfile: Dockerfile
+      dockerfile: .devcontainer/Dockerfile
     container_name: aquant-sdk-python
-    command: ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-    depends_on: 
-      - postgres
-      - redis
+    tty: true
+    stdin_open: true
     ports:
       - "8000:8000" 
     volumes:
       - ./:/app  
     networks:
-      - aquant-net  
-
-  postgres:
-    image: postgres:14
-    container_name: postgres
-    environment:
-      POSTGRES_USER: aquant_user #pragma: allowlist secret
-      POSTGRES_PASSWORD: aquant_password #pragma: allowlist secret
-      POSTGRES_DB: aquant_db #pragma: allowlist secret
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    networks:
-      - aquant-net  
-
-  redis:
-    image: redis:latest
-    container_name: redis
-    ports:
-      - "6379:6379"
-    command: ["redis-server", "--appendonly", "yes"]
-    volumes:
-      - redis-data:/data
-    networks:
-      - aquant-net  
-
-volumes:
-  postgres-data:  
-
-  redis-data:
+      - aquant-net
 
 networks:
   aquant-net:

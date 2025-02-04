@@ -17,4 +17,4 @@ RUN poetry install --no-root --no-interaction --no-ansi
 
 COPY . .
 
-CMD ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["bash"]
