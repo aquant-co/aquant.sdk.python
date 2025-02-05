@@ -1,8 +1,8 @@
 import logging
 import sys
 
-from aquant.api.base.interfaces import LoggerInterface
-from aquant.api.base.utils import JsonLogFormatter
+from aquant.core.logger.logger_formatter import LoggerFormatter
+from aquant.core.logger.logger_interface import LoggerInterface
 
 
 class Logger(LoggerInterface):
@@ -22,7 +22,7 @@ class Logger(LoggerInterface):
         self.logger.propagate = False
 
         # Formatter for structured logs
-        formatter = JsonLogFormatter()
+        formatter = LoggerFormatter()
 
         # Console handler
         handler = logging.StreamHandler(sys.stdout)

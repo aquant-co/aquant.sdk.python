@@ -5,7 +5,6 @@ class MessageProcessor:
 
 class PrintMessageProcessor(MessageProcessor):
     def process(self, message: dict):
-        # print(f"Processed message: {message}")
         pass
 
 

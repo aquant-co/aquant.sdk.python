@@ -1,7 +1,7 @@
 from pythonjsonlogger import jsonlogger
 
 
-class JsonLogFormatter(jsonlogger.JsonFormatter):
+class LoggerFormatter(jsonlogger.JsonFormatter):
     """
     Custom JSON log formatter for structured logging.
     """
