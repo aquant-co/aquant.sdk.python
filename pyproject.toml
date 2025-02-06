@@ -36,6 +36,8 @@ setuptools = "^75.8.0"
 ujson = "^5.10.0"
 nats-py = "^2.9.0"
 numpy = "^2.2.2"
+memory-profiler = "^0.61.0"
+orjson = "^3.10.15"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.8.6"

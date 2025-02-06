@@ -22,12 +22,14 @@ class MarketdataRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    def consume_books(self, keys: list[str]) -> pd.DataFrame:
+    def get_current_book(
+        self, tickers: list[str], side: list[str] = None
+    ) -> pd.DataFrame:
         """
         Consome dados do Redis.
 
         Args:
-            keys (list): Lista de chaves a serem consumidas.
+            tickers (list): Lista de chaves a serem consumidas.
 
         Returns:
             pd.DataFrame: DataFrame com os dados processados.

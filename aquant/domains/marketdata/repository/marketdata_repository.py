@@ -1,118 +1,128 @@
-import numpy as np
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Any
+
+import orjson as json_lib
 import pandas as pd
-import ujson
 
 from aquant.core.logger import Logger
-from aquant.domains.marketdata.interface import MarketdataRepositoryInterface
+from aquant.core.utils import weak_lru
 from aquant.domains.marketdata.utils.dictionaries import BookColumnsList
 from aquant.infra.redis import BufferedMessageProcessor, RedisClient
 
 
-class MarketdataRepository(MarketdataRepositoryInterface):
-    """
-    MarketdataRepository implementation using Redis as a datasource.
-    """
-
+class MarketdataRepository:
     def __init__(
         self,
         logger: Logger,
         redis_client: RedisClient,
         processor: BufferedMessageProcessor,
+        max_entries: int = 50000,
+        max_workers: int = 4,
     ) -> None:
         self.logger = logger
         self.redis_client = redis_client.get_client()
         self.processor = processor
-        self._columns = BookColumnsList
+        self._columns: list[str] = BookColumnsList
+        self.max_entries = max_entries
+        self.max_workers = max_workers
 
-    def get_market_data(self, ticker: str) -> pd.DataFrame:
+    @staticmethod
+    def decode_json(b: bytes) -> Any:
+        """Decode bytes into a Python object using orjson."""
+        return json_lib.loads(b)
+
+    def _process_key_entries(
+        self, key: str, raw_entries: list[bytes], max_entries: int
+    ) -> dict[str, list[Any]]:
         """
-        Fetches Market Data from Redis for a specific ticker.
-
-        Args:
-            ticker (str): Ticker to be queried.
-
-        Returns:
-            pd.DataFrame: Raw data of the requested ticker.
+        Process entries for a single Redis key.
+        Decodes and extracts fields in one pass.
         """
-        try:
-            return self.consume_books([ticker])
-        except Exception as e:
-            self.logger.error(
-                f"Error fetching market data for ticker: {ticker}, due to {e}"
-            )
-            return pd.DataFrame()
-
-    def consume_books(self, keys: list[str]) -> pd.DataFrame:
-        """
-        Fetches order book data from Redis and returns it as a DataFrame.
-
-        Args:
-            keys (list): List of Redis keys.
-
-        Returns:
-            pd.DataFrame: Raw data from Redis.
-        """
-        if not keys:
-            return pd.DataFrame(columns=self._columns)
-
-        max_entries = 10000
-        key_arr = np.empty(max_entries, dtype=object)
-        time_arr = np.empty(max_entries, dtype=object)
-        price_arr = np.empty(max_entries, dtype=np.float64)
-        qty_arr = np.empty(max_entries, dtype=np.float64)
-        brk_id_arr = np.empty(max_entries, dtype=np.int64)
-        fk_order_id_arr = np.empty(max_entries, dtype=object)
-        idx = 0
-
-        for key in keys:
+        entries: dict[str, list[Any]] = {
+            "key": [],
+            "entry_time": [],
+            "price": [],
+            "quantity": [],
+            "broker_id": [],
+            "fk_order_id": [],
+        }
+        for entry_bytes in raw_entries[:max_entries]:
             try:
-                pipe = self.redis_client.pipeline()
-                pipe.zrange(key, 0, -1)
-                raw_entries = pipe.execute()[0]
-
-                if not raw_entries:
-                    continue
-
-                for entry in raw_entries:
-                    if idx >= max_entries:
-                        max_entries *= 2
-                        key_arr.resize(max_entries, refcheck=False)
-                        time_arr.resize(max_entries, refcheck=False)
-                        price_arr.resize(max_entries, refcheck=False)
-                        qty_arr.resize(max_entries, refcheck=False)
-                        brk_id_arr.resize(max_entries, refcheck=False)
-                        fk_order_id_arr.resize(max_entries, refcheck=False)
-
-                    try:
-                        data = ujson.loads(entry.decode("utf-8"))
-                        key_arr[idx] = key
-                        time_arr[idx] = data["entry_time"]
-                        price_arr[idx] = data["price"]
-                        qty_arr[idx] = data["quantity"]
-                        brk_id_arr[idx] = data["broker_id"]
-                        fk_order_id_arr[idx] = data["fk_order_id"]
-                        idx += 1
-                    except (KeyError, ujson.JSONDecodeError):
-                        continue
-
-                    self.processor.process(data)
-
+                entry = self.decode_json(entry_bytes)
+                self.processor.process(entry)
+                entries["key"].append(key)
+                entries["entry_time"].append(entry.get("entry_time"))
+                entries["price"].append(entry.get("price"))
+                entries["quantity"].append(entry.get("quantity"))
+                entries["broker_id"].append(entry.get("broker_id"))
+                entries["fk_order_id"].append(entry.get("fk_order_id"))
             except Exception as e:
-                self.logger.error(f"Error processing key '{key}': {str(e)}")
-                continue
+                self.logger.warning(f"Skipping invalid entry for {key}: {e}")
+        return entries
 
-        if idx == 0:
+    @weak_lru(maxsize=128)
+    def get_current_book_cached(self, ticker_tuple: tuple[str, ...]) -> pd.DataFrame:
+        """Cache recent queries. Convert the ticker list to a tuple for hashability."""
+        return self.get_current_book(list(ticker_tuple))
+
+    def get_current_book(
+        self,
+        tickers: list[str],
+        side: list[str] | None = None,
+        max_age_minutes: int = 5,
+        only_recent: bool = False,
+    ) -> pd.DataFrame:
+        """
+        Fetch order book data from Redis for the provided tickers and return a DataFrame.
+        If only_recent is True, filter rows based on the entry_time column.
+        """
+        if only_recent:
+            current_time = pd.Timestamp.now()
+            df = super().get_current_book(tickers)
+            return df[
+                df["entry_time"]
+                > (current_time - pd.Timedelta(minutes=max_age_minutes))
+            ]
+        if not tickers:
             return pd.DataFrame(columns=self._columns)
 
-        return pd.DataFrame(
+        pipe = self.redis_client.pipeline()
+        for key in tickers:
+            pipe.zrange(key, 0, self.max_entries - 1)
+        raw_results = pipe.execute()
+
+        all_entries: dict[str, list[Any]] = {col: [] for col in self._columns}
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            future_to_key = {
+                executor.submit(
+                    self._process_key_entries, key, raw, self.max_entries
+                ): key
+                for key, raw in zip(tickers, raw_results, strict=False)
+            }
+            for future in as_completed(future_to_key):
+                try:
+                    key_entries = future.result()
+                    for col in all_entries:
+                        all_entries[col].extend(key_entries[col])
+                except Exception as e:
+                    self.logger.error(
+                        f"Error processing key {future_to_key[future]}: {e}"
+                    )
+
+        if not all_entries["key"]:
+            return pd.DataFrame(columns=self._columns)
+
+        df = pd.DataFrame(
             {
-                "key": pd.Series(key_arr[:idx], dtype="category"),
+                "key": pd.Series(all_entries["key"], dtype="category"),
                 "entry_time": pd.to_datetime(
-                    time_arr[:idx], format="%Y%m%d%H%M%S.%f", errors="coerce"
+                    all_entries["entry_time"], format="%Y%m%d%H%M%S.%f", errors="coerce"
                 ),
-                "price": price_arr[:idx],
-                "quantity": qty_arr[:idx],
-                "broker_id": brk_id_arr[:idx],
-                "fk_order_id": fk_order_id_arr[:idx],
+                "price": all_entries["price"],
+                "quantity": all_entries["quantity"],
+                "broker_id": all_entries["broker_id"],
+                "fk_order_id": all_entries["fk_order_id"],
             }
         )
+
+        return df

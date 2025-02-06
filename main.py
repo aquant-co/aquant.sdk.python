@@ -1,86 +1,117 @@
-# import asyncio
-# import struct
-# import time
-# from datetime import datetime, timedelta
-
-# import pandas as pd
-# from nats.aio.client import Client as NATS
-# from nats.aio.errors import ErrNoServers, ErrTimeout
-
-# from aquant.core.utils import parse_trades_binary_to_dataframe
-# from aquant.settings import settings
-
-
-# async def test_marketdata_request() -> pd.DataFrame:
-#     """
-#     Sends a marketdata request over NATS using a binary payload (start and end time)
-#     and converts the binary response into a pandas DataFrame.
-
-#     Returns:
-#         pd.DataFrame: DataFrame containing trade data.
-#     """
-#     nc = NATS()
-
-#     options = {
-#         "servers": [settings.NATS_URL],
-#         "user": settings.AQUANT_NATS_USER,
-#         "password": settings.AQUANT_NATS_PASSWORD,
-#     }
-
-#     try:
-#         await nc.connect(**options)
-#     except ErrNoServers as e:
-#         print(f"Error connecting to NATS: {e}")
-#         return pd.DataFrame()
-
-#     subject = "marketdata.request"
-
-#     start_time_dt = datetime.now() - timedelta(days=30)
-#     end_time_dt = datetime.now()
-
-#     payload = struct.pack("!dd", start_time_dt.timestamp(), end_time_dt.timestamp())
-
-#     try:
-#         start_perf = time.perf_counter()
-#         response = await nc.request(subject, payload, timeout=2)
-#         df = parse_trades_binary_to_dataframe(response.data)
-#         end_perf = time.perf_counter()
-#         elapsed_time_s = end_perf - start_perf
-#         elapsed_time_ms = elapsed_time_s * 1000
-#         elapsed_time_us = elapsed_time_ms * 1000
-
-#         print(
-#             f"\nTempo de execução: {elapsed_time_s:.6f} segundos | {elapsed_time_ms:.3f} ms | {elapsed_time_us:.0f} µs"
-#         )
-#         return df
-
-#     except ErrTimeout:
-#         print("Request timed out.")
-#         return pd.DataFrame()
-#     except Exception as e:
-#         print(f"Error during request: {e}")
-#         return pd.DataFrame()
-#     finally:
-#         await nc.close()
-
-
-# if __name__ == "__main__":
-#     asyncio.run(test_marketdata_request())
-
+import asyncio
 import time
+from datetime import datetime, timedelta
+from statistics import median
 
 from aquant import Aquant
 from aquant.settings import settings
 
-aquant = Aquant(redis_url=settings.REDIS_URL)
 
-start_perf = time.perf_counter()
-df = aquant.get_order_book(["VALE3F_Bid"])
-print(df)
-end_perf = time.perf_counter()
-elapsed_time_s = end_perf - start_perf
-elapsed_time_ms = elapsed_time_s * 1000
-elapsed_time_us = elapsed_time_ms * 1000
-print(
-    f"\nTempo de execução: {elapsed_time_s:.6f} segundos | {elapsed_time_ms:.3f} ms | {elapsed_time_us:.0f} µs"
-)
+async def get_trades_example():
+    aquant = await Aquant.create(
+        redis_url=settings.REDIS_URL,
+        nats_servers=[settings.NATS_URL],
+        nats_user=settings.AQUANT_NATS_USER,
+        nats_password=settings.AQUANT_NATS_PASSWORD,
+    )
+
+    try:
+        start_time = datetime.now() - timedelta(days=30)
+        end_time = datetime.now()
+        df = await aquant.get_trades(start_time, end_time)
+        return df
+    finally:
+        aquant.shutdown()
+
+
+async def get_current_order_book_example():
+    aquant = await Aquant.create(
+        redis_url=settings.REDIS_URL,
+        nats_servers=[settings.NATS_URL],
+        nats_user=settings.AQUANT_NATS_USER,
+        nats_password=settings.AQUANT_NATS_PASSWORD,
+    )
+
+    try:
+        df = aquant.get_current_order_book(["VALE3F_Bid"])
+        return df
+    finally:
+        aquant.shutdown()
+
+
+async def benchmark_books():
+    """
+    Benchmark assíncrono simples que mede o tempo de execução em milissegundos.
+    Utiliza time.perf_counter() para temporização de alta precisão e imprime informações
+    sobre o tempo e os dados recuperados.
+    """
+    execution_times = []
+
+    for _ in range(5):
+
+        start_time = time.perf_counter()
+
+        data = await get_current_order_book_example()
+
+        execution_time = (time.perf_counter() - start_time) * 1000
+        execution_times.append(execution_time)
+
+        await asyncio.sleep(0.1)
+
+    min_time = min(execution_times)
+    median_time = median(execution_times)
+    max_time = max(execution_times)
+
+    print("[Books]")
+    print("Resultados de Temporização (milissegundos):")
+    print(f"Recuperados {len(data) if data is not None else 0} registros")
+    print(f"\033[92mMínimo: {min_time:.2f} ms\033[0m")
+    print(f"\033[93mMediana: {median_time:.2f} ms\033[0m")
+    print(f"\033[91mMáximo: {max_time:.2f} ms\033[0m")
+    print(
+        f"\033[94mExecuções individuais: {[f'{t:.2f}' for t in execution_times]}\033[0m"
+    )
+    print("____")
+
+    return min_time
+
+
+async def benchmark_trades():
+    """
+    Benchmark assíncrono simples que mede o tempo de execução em milissegundos.
+    Utiliza time.perf_counter() para temporização de alta precisão e imprime informações
+    sobre o tempo e os dados recuperados.
+    """
+    execution_times = []
+
+    for _ in range(5):
+
+        start_time = time.perf_counter()
+
+        data = await get_trades_example()
+
+        execution_time = (time.perf_counter() - start_time) * 1000
+        execution_times.append(execution_time)
+
+        await asyncio.sleep(0.1)
+
+    min_time = min(execution_times)
+    median_time = median(execution_times)
+    max_time = max(execution_times)
+
+    print("[Trades]")
+    print("Resultados de Temporização (milissegundos):")
+    print(f"Recuperados {len(data) if data is not None else 0} registros")
+    print(f"\033[92mMínimo: {min_time:.2f} ms\033[0m")
+    print(f"\033[93mMediana: {median_time:.2f} ms\033[0m")
+    print(f"\033[91mMáximo: {max_time:.2f} ms\033[0m")
+    print(
+        f"\033[94mExecuções individuais: {[f'{t:.2f}' for t in execution_times]}\033[0m"
+    )
+    print("____")
+    return min_time
+
+
+if __name__ == "__main__":
+    asyncio.run(benchmark_books())
+    asyncio.run(benchmark_trades())

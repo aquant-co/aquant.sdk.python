@@ -40,7 +40,8 @@ class MarketdataService:
         Returns:
             pd.DataFrame: Structured order book data.
         """
-        raw_books = self.repository.consume_books(tickers)
+
+        raw_books = self.repository.get_current_book(tickers)
         return self._process_order_book(raw_books)
 
     def _process_market_data(self, df: pd.DataFrame) -> pd.DataFrame:

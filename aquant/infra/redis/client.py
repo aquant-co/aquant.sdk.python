@@ -4,12 +4,18 @@ from aquant.settings import settings
 
 
 class RedisClient:
-    def __init__(self, redis_url: str = settings.REDIS_URL, use_tls: bool = True):
+    def __init__(
+        self,
+        redis_url: str = settings.REDIS_URL,
+        use_tls: bool = True,
+        max_connections: int = 10,
+        socket_timeout: float = 0.1,
+    ):
         """
-        Inicializa o RedisClient com suporte a TLS.
+        Initialize RedisClient with TLS support.
 
-        :param redis_url: URL de conexão do Redis.
-        :param use_tls: Indica se TLS deve ser usado para a conexão.
+        :param redis_url: Redis URL connection.
+        :param use_tls: Indicates if TLS must have be used for connection.
         """
         self.redis_url = redis_url
         self.use_tls = use_tls
@@ -17,10 +23,16 @@ class RedisClient:
         self.client = redis.StrictRedis(
             connection_pool=self.pool, decode_responses=False
         )
+        self.pool = redis.ConnectionPool.from_url(
+            redis_url,
+            connection_class=redis.SSLConnection if use_tls else redis.Connection,
+            max_connections=max_connections,
+            socket_timeout=socket_timeout,
+        )
 
     def _create_connection_pool(self):
         """
-        Cria uma ConnectionPool para o Redis com suporte opcional a TLS.
+        Creates a Redis ConnectionPool with TLS optional support.
         """
         connection_class = redis.SSLConnection if self.use_tls else redis.Connection
         return redis.ConnectionPool.from_url(
@@ -29,13 +41,13 @@ class RedisClient:
 
     def get_client(self):
         """
-        Retorna o cliente Redis.
+        Returns a Redis client.
         """
         return self.client
 
     def ping(self):
         """
-        Testa a conectividade com o Redis.
+        Tests Redis connectivity.
         """
         return self.client.ping()
 
@@ -44,9 +56,9 @@ class RedisClientFactory:
     @staticmethod
     def create_client(redis_url: str, use_tls: bool = True) -> RedisClient:
         """
-        Cria uma instância de RedisClient com as configurações fornecidas.
+        Creates an RedisClient instance with the given configurations.
 
-        :param redis_url: URL de conexão do Redis.
-        :param use_tls: Indica se TLS deve ser usado para a conexão.
+        :param redis_url: Redis URL connection.
+        :param use_tls: Indicates if TLS must have be used for connection.
         """
         return RedisClient(redis_url=redis_url, use_tls=use_tls)
