@@ -27,10 +27,10 @@ class Aquant:
     Example:
         ```python
         aquant = Aquant(
-            redis_url="redis://localhost:6379", #pragma: allowlist secret
-            nats_servers=["nats://localhost:4222"], #pragma: allowlist secret
-            nats_user="your_nats_user", #pragma: allowlist secret
-            nats_password="..." #pragma: allowlist secret
+            redis_url="redis://localhost:6379",
+            nats_servers=["nats://localhost:4222"],
+            nats_user="your_nats_user",
+            nats_password="..."
         )
         await aquant.initialize()
         ```
