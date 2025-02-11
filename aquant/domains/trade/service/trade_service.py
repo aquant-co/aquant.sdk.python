@@ -4,7 +4,9 @@ from datetime import datetime
 import pandas as pd
 
 from aquant.core.logger import Logger
-from aquant.domains.trade.utils import parse_trades_binary_to_dataframe
+from aquant.domains.trade.utils.parse_trades_binary_to_dataframe import (
+    parse_trades_binary_to_dataframe,
+)
 from aquant.infra.nats import NatsClient
 
 
@@ -17,15 +19,15 @@ class TradeService:
         self, start_time: datetime, end_time: datetime
     ) -> pd.DataFrame:
         try:
-            subject = "marketdata.request"
+            subject = "marketdata.trade.request"
             payload = struct.pack("!dd", start_time.timestamp(), end_time.timestamp())
-            response = await self.nats_client.request(subject, payload, timeout=2)
+            response = await self.nats_client.request(subject, payload, timeout=20)
             return self._parse_trades(response)
         except Exception as e:
             self.logger.error(
                 f"Error trying to fetch trades for timerange provided. start_time: {start_time}, end_time: {end_time}, due: {e}"
             )
-            return pd.DataFrame()
+            raise e
 
     def _parse_trades(self, data: bytes) -> pd.DataFrame:
         try:
@@ -33,4 +35,4 @@ class TradeService:
             return df
         except Exception as e:
             self.logger.error(f"Error parsing trades data: {e}")
-            return pd.DataFrame()
+            raise e

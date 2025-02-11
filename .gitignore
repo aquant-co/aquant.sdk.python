@@ -110,8 +110,8 @@ secrets.env
 *.key
 
 # Kubernetes
-*.yaml
-*.yml
+*.kube/*.yaml
+*.kube/*.yml
 .kube/
 
 # Logs and Debug

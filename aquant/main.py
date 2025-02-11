@@ -111,6 +111,7 @@ class Aquant:
         self.container.wire(modules=[__name__])
         self.marketdata = self.container.marketdata.marketdata_service()
         self.trade = await self.container.trade.trade_service()
+        self.broker = await self.container.broker.broker_service()
 
     def shutdown(self):
         """
@@ -168,3 +169,6 @@ class Aquant:
             ```
         """
         return await self.trade.get_trades(start_time, end_time)
+
+    async def get_broker(self, fk_id: int) -> pd.DataFrame:
+        return await self.broker.get_broker_by_fk_id(fk_id)
