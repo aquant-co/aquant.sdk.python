@@ -93,10 +93,10 @@ class Aquant:
             redis_use_tls,
         )
 
-        await self.initialize()
+        await self._initialize()
         return self
 
-    async def initialize(self):
+    async def _initialize(self):
         """
         Initializes and wires the necessary services.
 
@@ -112,6 +112,7 @@ class Aquant:
         self.marketdata = self.container.marketdata.marketdata_service()
         self.trade = await self.container.trade.trade_service()
         self.broker = await self.container.broker.broker_service()
+        self.security = await self.container.security.security_service()
 
     def shutdown(self):
         """
@@ -172,3 +173,8 @@ class Aquant:
 
     async def get_broker(self, fk_id: int) -> pd.DataFrame:
         return await self.broker.get_broker_by_fk_id(fk_id)
+
+    async def get_securities(
+        self, ticker: str = None, asset: str = None, expires_at: datetime = None
+    ) -> dict:
+        return await self.security.get_securities(ticker, asset, expires_at)

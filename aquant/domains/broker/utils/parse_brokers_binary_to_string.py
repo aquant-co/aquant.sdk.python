@@ -14,6 +14,5 @@ def parse_brokers_binary_to_string(binary_data: bytes) -> str:
             f"Expected {fixed_length} bytes, but got {len(binary_data)} bytes"
         )
 
-    # Strip off trailing null bytes and decode from UTF-8.
     broker_name = binary_data.rstrip(b"\x00").decode("utf-8")
     return broker_name
