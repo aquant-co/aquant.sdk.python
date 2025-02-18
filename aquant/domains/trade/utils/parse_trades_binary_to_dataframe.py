@@ -22,6 +22,7 @@ def parse_trades_binary_to_dataframe(binary_data: bytes) -> pd.DataFrame:
         return pd.DataFrame(
             columns=[
                 "security_id",
+                "ticker",
                 "buyer_id",
                 "seller_id",
                 "fk_order_id",
@@ -38,6 +39,7 @@ def parse_trades_binary_to_dataframe(binary_data: bytes) -> pd.DataFrame:
     dtype = np.dtype(
         [
             ("security_id", ">u4"),
+            ("ticker", "S20"),
             ("buyer_id", ">u4"),
             ("seller_id", ">u4"),
             ("fk_order_id", "S20"),
@@ -55,14 +57,14 @@ def parse_trades_binary_to_dataframe(binary_data: bytes) -> pd.DataFrame:
 
     if len(binary_data) < expected_length:
         logger.error(
-            f"❌ Binary data size mismatch! Expected {expected_length} bytes, got {len(binary_data)} bytes."
+            f"Binary data size mismatch! Expected {expected_length} bytes, got {len(binary_data)} bytes."
         )
         raise ValueError("Binary data size does not match expected size.")
 
     try:
         records = np.frombuffer(binary_data, dtype=dtype, offset=4, count=num_records)
     except ValueError as e:
-        logger.error(f"❌ Error parsing binary data: {e}.")
+        logger.error(f"Error parsing binary data: {e}.")
         raise
 
     records = records.astype(records.dtype.newbyteorder("="))

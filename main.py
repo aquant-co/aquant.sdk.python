@@ -35,7 +35,28 @@ async def get_trades_example():
     try:
         start_time = datetime.now() - timedelta(days=100)
         end_time = datetime.now()
-        df = await aquant.get_trades(start_time, end_time)
+        ticker = "VALEO723"
+        df = await aquant.get_trades(
+            ticker=ticker, start_time=start_time, end_time=end_time
+        )
+
+        open_price = aquant.calculate_ohlcv_open(df)
+        high_price = aquant.calculate_ohlcv_high(df)
+        low_price = aquant.calculate_ohlcv_low(df)
+        close_price = aquant.calculate_ohlcv_close(df)
+        volume_quantity = aquant.calculate_ohlcv_volume(df)
+        ohlcv = aquant.calculate_ohlcv(df)
+
+        print(
+            f"""
+        Open: {open_price},
+        High: {high_price},
+        Low: {low_price},
+        Close: {close_price},
+        Volume: {volume_quantity},
+        Open-High-Low-Close-Volume: {ohlcv} 
+        """
+        )
         return df
     finally:
         aquant.shutdown()
@@ -136,6 +157,37 @@ async def benchmark_trades():
 
         data = await get_trades_example()
 
+        # data.get_open() => {
+        #     "ticker": "abc",
+        #     "open": 123864
+        #     }
+        # data.get_closed() => {
+        #     "ticker": "abc",
+        #     "closed": 123864
+        #     }
+        # data.get_high() => {
+        #     "ticker": "abc",
+        #     "high": 1234
+        # }
+        # etc..
+
+        # data.get_ohlcv() => {
+        #     "ticker": "ABC",
+        #     "open": 123,
+        #     "closed": 321,
+        #     "high": 193478,
+        #     "low": 1234,
+        #     "volume": 19247913
+        # }
+        # Or data = await get_ohcv(start_time=datetime, end_time=datetime, ticker=str) =>  {
+        #     ticker: "ABC",
+        #     open: 123,
+        #     closed: 321,
+        #     high: 193478,
+        #     low: 1234,
+        #     volume: 19247913
+        # }
+
         execution_time = (time.perf_counter() - start_time) * 1000
         execution_times.append(execution_time)
 
@@ -232,7 +284,7 @@ async def benchmark_securities():
 
 
 if __name__ == "__main__":
-    asyncio.run(benchmark_books())
-    asyncio.run(benchmark_broker())
-    asyncio.run(benchmark_securities())
+    # asyncio.run(benchmark_books())
+    # asyncio.run(benchmark_broker())
+    # asyncio.run(benchmark_securities())
     asyncio.run(benchmark_trades())

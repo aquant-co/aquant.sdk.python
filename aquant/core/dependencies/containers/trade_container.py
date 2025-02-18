@@ -1,7 +1,11 @@
 from dependency_injector import containers, providers
 
 from aquant.core.dependencies.providers import create_logger_provider, init_nats_client
-from aquant.domains.trade.service import TradeService
+from aquant.domains.trade.service import (
+    TradeParserService,
+    TradePayloadBuilderService,
+    TradeService,
+)
 
 
 class TradeContainer(containers.DeclarativeContainer):
@@ -21,4 +25,15 @@ class TradeContainer(containers.DeclarativeContainer):
         password=config.nats_password,
     )
 
-    trade_service = providers.Factory(TradeService, logger, nats_client)
+    trade_payload_builder_service = providers.Factory(
+        TradePayloadBuilderService, logger
+    )
+    trade_parser_service = providers.Factory(TradeParserService, logger)
+
+    trade_service = providers.Factory(
+        TradeService,
+        logger,
+        nats_client,
+        trade_payload_builder_service,
+        trade_parser_service,
+    )

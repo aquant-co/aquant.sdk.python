@@ -111,6 +111,13 @@ class Aquant:
         self.container.wire(modules=[__name__])
         self.marketdata = self.container.marketdata.marketdata_service()
         self.trade = await self.container.trade.trade_service()
+        self.trade_payload_builder_service = (
+            self.container.trade.trade_payload_builder_service()
+        )
+        self.trade_parser_service = self.container.trade.trade_parser_service()
+        self.open_high_low_close_volume = (
+            self.container.open_high_low_close_volume.open_high_low_close_volume_service()
+        )
         self.broker = await self.container.broker.broker_service()
         self.security = await self.container.security.security_service()
 
@@ -147,29 +154,54 @@ class Aquant:
         return self.marketdata.get_order_book(tickers)
 
     async def get_trades(
-        self, start_time: datetime, end_time: datetime
-    ) -> pd.DataFrame:
+        self,
+        ticker: str | None = None,
+        asset: str | None = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
+        ohlcv: bool = False,
+    ) -> pd.DataFrame | None:
         """
         Retrieves all trades within the specified time range.
 
-        This asynchronous method fetches trade data between the provided start and end times.
+        This asynchronous method fetches trade data based on the provided parameters.
 
         Args:
-            start_time (datetime): The beginning of the time range for fetching trades.
-            end_time (datetime): The end of the time range for fetching trades.
+            ticker (Optional[str]): The ticker symbol for the asset.
+            asset (Optional[str]): The asset identifier.
+            start_time (Optional[datetime]): The beginning of the time range for fetching trades.
+            end_time (Optional[datetime]): The end of the time range for fetching trades.
+            ohlcv (bool): If True, returns OHLCV (Open-High-Low-Close-Volume) data instead of raw trade data.
 
         Returns:
-            pd.DataFrame: A DataFrame containing trade data within the specified time range.
+            Optional[pd.DataFrame]: A DataFrame containing trade data or None if invalid parameters are provided.
+
+        Raises:
+            ValueError: If neither 'ticker' nor 'asset' is provided, or if start_time > end_time.
 
         Example:
             ```python
+            ticker = "AAPL"
             start_time = datetime(2023, 1, 1)
             end_time = datetime(2023, 1, 31)
-            trades_df = await aquant.get_trades(start_time, end_time)
-            print(trades_df)
+            trades_df = await aquant.get_trades(ticker=ticker, start_time=start_time, end_time=end_time)
+            return trades_df
             ```
         """
-        return await self.trade.get_trades(start_time, end_time)
+
+        if not ticker and not asset:
+            raise ValueError("At least one of 'ticker' or 'asset' must be provided.")
+
+        if start_time and end_time and start_time > end_time:
+            raise ValueError("start_time cannot be greater than end_time.")
+
+        return await self.trade.get_trades(
+            ticker=ticker,
+            asset=asset,
+            start_time=start_time,
+            end_time=end_time,
+            ohlcv=ohlcv,
+        )
 
     async def get_broker(self, fk_id: int) -> pd.DataFrame:
         return await self.broker.get_broker_by_fk_id(fk_id)
@@ -178,3 +210,23 @@ class Aquant:
         self, ticker: str = None, asset: str = None, expires_at: datetime = None
     ) -> dict:
         return await self.security.get_securities(ticker, asset, expires_at)
+
+    """Auxiliary functions to help while working with ohlcv in dataframes"""
+
+    def calculate_ohlcv_open(self, df) -> float:
+        return self.open_high_low_close_volume.calculate_open(df)
+
+    def calculate_ohlcv_high(self, df) -> float:
+        return self.open_high_low_close_volume.calculate_high(df)
+
+    def calculate_ohlcv_low(self, df) -> float:
+        return self.open_high_low_close_volume.calculate_low(df)
+
+    def calculate_ohlcv_close(self, df) -> float:
+        return self.open_high_low_close_volume.calculate_close(df)
+
+    def calculate_ohlcv_volume(self, df) -> float:
+        return self.open_high_low_close_volume.calculate_volume(df)
+
+    def calculate_ohlcv(self, df) -> dict:
+        return self.open_high_low_close_volume.calculate_ohlcv(df)
