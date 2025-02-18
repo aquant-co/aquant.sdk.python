@@ -3,6 +3,7 @@ from datetime import datetime
 import pandas as pd
 
 from aquant.core.dependencies.containers import AquantContainer
+from aquant.domains.trade.entity import OpenHighLowCloseVolume
 
 
 class Aquant:
@@ -160,7 +161,7 @@ class Aquant:
         start_time: datetime | None = None,
         end_time: datetime | None = None,
         ohlcv: bool = False,
-    ) -> pd.DataFrame | None:
+    ) -> pd.DataFrame | OpenHighLowCloseVolume:
         """
         Retrieves all trades within the specified time range.
 
@@ -189,8 +190,10 @@ class Aquant:
             ```
         """
 
-        if not ticker and not asset:
-            raise ValueError("At least one of 'ticker' or 'asset' must be provided.")
+        if not ticker and not asset and not start_time and not end_time:
+            raise ValueError(
+                "At least one of 'ticker' or 'asset', or 'start_time', and or 'end_time' must be provided."
+            )
 
         if start_time and end_time and start_time > end_time:
             raise ValueError("start_time cannot be greater than end_time.")

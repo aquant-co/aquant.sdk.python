@@ -1,4 +1,4 @@
-from .open_high_low_close_volume import OpenHighLowClosedVolume
+from .open_high_low_close_volume import OpenHighLowCloseVolume
 from .trade import Trade
 
-__all__ = ["Trade", "OpenHighLowClosedVolume"]
+__all__ = ["Trade", "OpenHighLowCloseVolume"]

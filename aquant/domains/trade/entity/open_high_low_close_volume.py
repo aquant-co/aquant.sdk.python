@@ -1,9 +1,7 @@
 from pydantic import BaseModel, Field
 
 
-class OpenHighLowClosedVolume(BaseModel):
-    ticker: str
-    asset: str
+class OpenHighLowCloseVolume(BaseModel):
     open: float = Field(alias="open")
     high: float
     low: float

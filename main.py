@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from statistics import median
 
 from aquant import Aquant
+from aquant.domains.trade.entity import OpenHighLowCloseVolume
 from aquant.settings import settings
 
 """ Only for tests purpose """
@@ -35,28 +36,29 @@ async def get_trades_example():
     try:
         start_time = datetime.now() - timedelta(days=100)
         end_time = datetime.now()
-        ticker = "VALEO723"
+        # ticker = "VALEO723"
+        asset = "VALE"
         df = await aquant.get_trades(
-            ticker=ticker, start_time=start_time, end_time=end_time
+            asset=asset, start_time=start_time, end_time=end_time, ohlcv=True
         )
+        print(df)
+        # open_price = aquant.calculate_ohlcv_open(df)
+        # high_price = aquant.calculate_ohlcv_high(df)
+        # low_price = aquant.calculate_ohlcv_low(df)
+        # close_price = aquant.calculate_ohlcv_close(df)
+        # volume_quantity = aquant.calculate_ohlcv_volume(df)
+        # ohlcv = aquant.calculate_ohlcv(df)
 
-        open_price = aquant.calculate_ohlcv_open(df)
-        high_price = aquant.calculate_ohlcv_high(df)
-        low_price = aquant.calculate_ohlcv_low(df)
-        close_price = aquant.calculate_ohlcv_close(df)
-        volume_quantity = aquant.calculate_ohlcv_volume(df)
-        ohlcv = aquant.calculate_ohlcv(df)
-
-        print(
-            f"""
-        Open: {open_price},
-        High: {high_price},
-        Low: {low_price},
-        Close: {close_price},
-        Volume: {volume_quantity},
-        Open-High-Low-Close-Volume: {ohlcv} 
-        """
-        )
+        # print(
+        #     f"""
+        # Open: {open_price},
+        # High: {high_price},
+        # Low: {low_price},
+        # Close: {close_price},
+        # Volume: {volume_quantity},
+        # Open-High-Low-Close-Volume: {ohlcv}
+        # """
+        # )
         return df
     finally:
         aquant.shutdown()
@@ -151,7 +153,7 @@ async def benchmark_trades():
     """
     execution_times = []
 
-    for _ in range(5):
+    for _ in range(1):
 
         start_time = time.perf_counter()
 
@@ -199,7 +201,9 @@ async def benchmark_trades():
 
     print("[Trades]")
     print("Resultados de Temporização (milissegundos):")
-    print(f"Recuperados {len(data) if data is not None else 0} registros")
+    print(
+        f"Recuperados {len(data.model_dump()) if isinstance(data, OpenHighLowCloseVolume) else (len(data) if isinstance(data, dict) else 0)} registros"
+    )
     print(f"\033[92mMínimo: {min_time:.2f} ms\033[0m")
     print(f"\033[93mMediana: {median_time:.2f} ms\033[0m")
     print(f"\033[91mMáximo: {max_time:.2f} ms\033[0m")

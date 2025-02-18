@@ -7,7 +7,7 @@ import pandas as pd
 from aquant.core.logger import Logger
 from aquant.core.serializers import BinarySerializerService
 from aquant.domains.trade.dtos import TradeDTO
-from aquant.domains.trade.entity import Trade
+from aquant.domains.trade.entity import OpenHighLowCloseVolume, Trade
 
 
 class TradeParserService:
@@ -124,3 +124,26 @@ class TradeParserService:
         except Exception as e:
             self.logger.error(f"Error parsing trades into DataFrame: {e}")
             raise e
+
+    def decode_open_high_low_closed_volume(
+        self, binary_data: bytes
+    ) -> OpenHighLowCloseVolume:
+        """
+        Decodes OpenHighLowCloseVolume object and converts string back to decimal.
+        """
+        try:
+            self.logger.info("Trying to deserialize ohlcv payload data into dict...")
+            fmt = "!20s20s20s20s20s"
+            unpacked = struct.unpack(fmt, binary_data)
+
+            return OpenHighLowCloseVolume(
+                open=Decimal(unpacked[0].decode("utf-8").strip("\x00")),
+                high=Decimal(unpacked[1].decode("utf-8").strip("\x00")),
+                low=Decimal(unpacked[2].decode("utf-8").strip("\x00")),
+                close=Decimal(unpacked[3].decode("utf-8").strip("\x00")),
+                volume=Decimal(unpacked[4].decode("utf-8").strip("\x00")),
+            )
+
+        except Exception as e:
+            self.logger.error(f"Error decoding OHLCV response, due: {e}")
+            return None

@@ -1,7 +1,7 @@
 import pandas as pd
 
 from aquant.core.logger import Logger
-from aquant.domains.trade.entity import OpenHighLowClosedVolume
+from aquant.domains.trade.entity import OpenHighLowCloseVolume
 
 
 class TradeOHLCVCalcService:
@@ -38,22 +38,16 @@ class TradeOHLCVCalcService:
         except Exception as e:
             self.logger.error(f"Error trying to calculate ohlcv - open. Error : {e}")
 
-    def calculate_ohlcv(self, df: pd.DataFrame) -> OpenHighLowClosedVolume:
+    def calculate_ohlcv(self, df: pd.DataFrame) -> OpenHighLowCloseVolume:
         try:
-            results = []
-            grouped = df.groupby(["ticker", "asset"])
-            for (ticker, asset), group in grouped:
-                ohlcv = OpenHighLowClosedVolume(
-                    ticker=ticker,
-                    asset=asset,
-                    open=self.calculate_open(group),
-                    high=self.calculate_high(group),
-                    low=self.calculate_low(group),
-                    close=self.calculate_close(group),
-                    volume=self.calculate_volume(group),
-                )
-                results.append(ohlcv.dict(by_alias=True))
-            return results
+            ohlcv = OpenHighLowCloseVolume(
+                open=self.calculate_open(df),
+                high=self.calculate_high(df),
+                low=self.calculate_low(df),
+                close=self.calculate_close(df),
+                volume=self.calculate_volume(df),
+            )
+            return ohlcv
         except Exception as e:
             self.logger.error(f"Error trying to calculate OHLCV: {e}")
             return []
