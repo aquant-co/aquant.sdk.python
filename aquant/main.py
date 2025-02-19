@@ -176,6 +176,7 @@ class Aquant:
 
         Returns:
             Optional[pd.DataFrame]: A DataFrame containing trade data or None if invalid parameters are provided.
+            OpenHighLowCloseVolume: A class containing ohlcv results or None if an error has raised.
 
         Raises:
             ValueError: If neither 'ticker' nor 'asset' is provided, or if start_time > end_time.
@@ -207,29 +208,183 @@ class Aquant:
         )
 
     async def get_broker(self, fk_id: int) -> pd.DataFrame:
+        """
+        Retrieves broker information based on the given foreign key ID.
+
+        This asynchronous method queries the broker service to fetch broker details
+        associated with the specified foreign key ID (fk_id).
+
+        Args:
+            fk_id (int): The foreign key ID of the broker.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing broker details.
+
+        Raises:
+            ValueError: If the provided fk_id is invalid or not found.
+
+        Example:
+            ```python
+            fk_id = 1234
+            broker_info = await aquant.get_broker(fk_id=fk_id)
+            print(broker_info)
+            ```
+        """
         return await self.broker.get_broker_by_fk_id(fk_id)
 
     async def get_securities(
         self, ticker: str = None, asset: str = None, expires_at: datetime = None
     ) -> dict:
+        """
+        Fetches security details based on ticker, asset, or expiration date.
+
+        This asynchronous method queries the security service to retrieve security
+        information for a given ticker, asset name, or expiration date.
+
+        Args:
+            ticker (Optional[str]): The ticker symbol of the security.
+            asset (Optional[str]): The name of the asset associated with the security.
+            expires_at (Optional[datetime]): The expiration date of the security.
+
+        Returns:
+            dict: A dictionary containing security details.
+
+        Raises:
+            ValueError: If none of the parameters are provided or if the query fails.
+
+        Example:
+            ```python
+            ticker = "VALE3"
+            asset = "VALE"
+            expires_at = datetime(2025, 12, 31)
+
+            security_info = await aquant.get_securities(ticker=ticker, asset=asset, expires_at=expires_at)
+            print(security_info)
+            ```
+        """
         return await self.security.get_securities(ticker, asset, expires_at)
 
-    """Auxiliary functions to help while working with ohlcv in dataframes"""
+    """
+    Auxiliary functions for OHLCV calculations in DataFrames.
+
+    These methods provide an interface to compute individual components of OHLCV
+    (Open, High, Low, Close, Volume) from a given DataFrame containing trade data.
+    They interact with the `open_high_low_close_volume` service to perform calculations.
+
+    Each function extracts the corresponding OHLCV value from the dataset, ensuring
+    that users can efficiently process and analyze market data.
+    """
 
     def calculate_ohlcv_open(self, df) -> float:
+        """
+        Calculates the open price from the given trade DataFrame.
+
+        Args:
+            df (pd.DataFrame): The DataFrame containing trade data.
+
+        Returns:
+            float: The first recorded trade price (open price).
+
+        Example:
+            ```python
+            open_price = aquant.calculate_ohlcv_open(df)
+            print(open_price)
+            ```
+        """
         return self.open_high_low_close_volume.calculate_open(df)
 
     def calculate_ohlcv_high(self, df) -> float:
+        """
+        Calculates the highest trade price (high) from the given trade DataFrame.
+
+        Args:
+            df (pd.DataFrame): The DataFrame containing trade data.
+
+        Returns:
+            float: The highest recorded trade price.
+
+        Example:
+            ```python
+            high_price = aquant.calculate_ohlcv_high(df)
+            print(high_price)
+            ```
+        """
         return self.open_high_low_close_volume.calculate_high(df)
 
     def calculate_ohlcv_low(self, df) -> float:
+        """
+        Calculates the lowest trade price (low) from the given trade DataFrame.
+
+        Args:
+            df (pd.DataFrame): The DataFrame containing trade data.
+
+        Returns:
+            float: The lowest recorded trade price.
+
+        Example:
+            ```python
+            low_price = aquant.calculate_ohlcv_low(df)
+            print(low_price)
+            ```
+        """
         return self.open_high_low_close_volume.calculate_low(df)
 
     def calculate_ohlcv_close(self, df) -> float:
+        """
+        Calculates the closing trade price from the given trade DataFrame.
+
+        The close price is the last recorded trade price in the dataset.
+
+        Args:
+            df (pd.DataFrame): The DataFrame containing trade data.
+
+        Returns:
+            float: The last recorded trade price (close price).
+
+        Example:
+            ```python
+            close_price = aquant.calculate_ohlcv_close(df)
+            print(close_price)
+            ```
+        """
         return self.open_high_low_close_volume.calculate_close(df)
 
     def calculate_ohlcv_volume(self, df) -> float:
+        """
+        Calculates the total trade volume from the given trade DataFrame.
+
+        This method sums all trade quantities within the dataset.
+
+        Args:
+            df (pd.DataFrame): The DataFrame containing trade data.
+
+        Returns:
+            float: The total trade volume.
+
+        Example:
+            ```python
+            total_volume = aquant.calculate_ohlcv_volume(df)
+            print(total_volume)
+            ```
+        """
         return self.open_high_low_close_volume.calculate_volume(df)
 
     def calculate_ohlcv(self, df) -> dict:
+        """
+        Computes the complete OHLCV values (Open, High, Low, Close, Volume) from the given DataFrame.
+
+        This method consolidates all OHLCV calculations into a single dictionary structure.
+
+        Args:
+            df (pd.DataFrame): The DataFrame containing trade data.
+
+        Returns:
+            dict: A dictionary with OHLCV values.
+
+        Example:
+            ```python
+            ohlcv_data = aquant.calculate_ohlcv(df)
+            print(ohlcv_data)
+            ```
+        """
         return self.open_high_low_close_volume.calculate_ohlcv(df)
