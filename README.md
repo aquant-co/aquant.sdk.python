@@ -1,3 +1,1 @@
-# Aquant Bot
-
-Aquant Bot
+# Aquant SDK Documentation

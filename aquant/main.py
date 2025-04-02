@@ -136,7 +136,9 @@ class Aquant:
         """
         self.container.unwire()
 
-    def get_current_order_book(self, tickers: list[str]) -> pd.DataFrame:
+    def get_current_order_book(
+        self, tickers: list[str], max_entries: int = 20
+    ) -> pd.DataFrame:
         """
         Retrieves the current order book for the specified tickers.
 
@@ -152,7 +154,7 @@ class Aquant:
             print(order_book_df)
             ```
         """
-        return self.marketdata.get_order_book(tickers)
+        return self.marketdata.get_order_book(tickers, max_entries)
 
     async def get_trades(
         self,

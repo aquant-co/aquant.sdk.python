@@ -16,14 +16,14 @@ class MarketdataRepository:
         logger: Logger,
         redis_client: RedisClient,
         processor: BufferedMessageProcessor,
-        max_entries: int = 50000,
+        # max_entries: int = 50000,
         max_workers: int = 4,
     ) -> None:
         self.logger = logger
         self.redis_client = redis_client.get_client()
         self.processor = processor
         self._columns: list[str] = BookColumnsList
-        self.max_entries = max_entries
+        # self.max_entries = max_entries
         self.max_workers = max_workers
 
     @staticmethod
@@ -68,6 +68,7 @@ class MarketdataRepository:
     def get_current_book(
         self,
         tickers: list[str],
+        max_entries: int,
         side: list[str] | None = None,
         max_age_minutes: int = 5,
         only_recent: bool = False,
@@ -88,15 +89,13 @@ class MarketdataRepository:
 
         pipe = self.redis_client.pipeline()
         for key in tickers:
-            pipe.zrange(key, 0, self.max_entries - 1)
+            pipe.zrange(key, 0, max_entries - 1)
         raw_results = pipe.execute()
 
         all_entries: dict[str, list[Any]] = {col: [] for col in self._columns}
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             future_to_key = {
-                executor.submit(
-                    self._process_key_entries, key, raw, self.max_entries
-                ): key
+                executor.submit(self._process_key_entries, key, raw, max_entries): key
                 for key, raw in zip(tickers, raw_results, strict=False)
             }
             for future in as_completed(future_to_key):

@@ -1,4 +1,5 @@
 import asyncio
+import ssl
 
 from nats.aio.client import Client as Nats
 from nats.aio.errors import ErrNoServers, ErrTimeout
@@ -20,10 +21,18 @@ class NatsClient(NatsInterface):
 
     async def connect(self):
         """Tenta conectar ao NATS com reconexão automática."""
+        tls_context = ssl.create_default_context()
+        tls_context.check_hostname = False
+        tls_context.verify_mode = ssl.CERT_NONE
         for attempt in range(self.reconnect_attempts):
             try:
                 await self.nc.connect(
-                    servers=self.servers, user=self.user, password=self.password
+                    servers=self.servers,
+                    user=self.user,
+                    password=self.password,
+                    tls=tls_context,
+                    connect_timeout=5,
+                    tls_handshake_first=True,
                 )
                 self.log.info(f"Connected to NATS servers on attempt {attempt + 1}.")
                 return

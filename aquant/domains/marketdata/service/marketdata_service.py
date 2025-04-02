@@ -30,7 +30,7 @@ class MarketdataService:
         raw_data = self.repository.get_market_data(ticker)
         return self._process_market_data(raw_data)
 
-    def get_order_book(self, tickers: list[str]) -> pd.DataFrame:
+    def get_order_book(self, tickers: list[str], max_entries: int) -> pd.DataFrame:
         """
         Retrieves the order book for one or more assets.
 
@@ -41,7 +41,7 @@ class MarketdataService:
             pd.DataFrame: Structured order book data.
         """
 
-        raw_books = self.repository.get_current_book(tickers)
+        raw_books = self.repository.get_current_book(tickers, max_entries)
         return self._process_order_book(raw_books)
 
     def _process_market_data(self, df: pd.DataFrame) -> pd.DataFrame:

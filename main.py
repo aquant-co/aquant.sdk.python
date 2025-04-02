@@ -1,5 +1,6 @@
 import asyncio
 import time
+from datetime import datetime, timedelta
 from statistics import median
 
 from aquant import Aquant
@@ -34,12 +35,14 @@ async def get_trades_example():
 
     try:
         # Parameters:
-        # start_time = datetime.now() - timedelta(days=100)
-        # end_time = datetime.now()
-        # ticker = "VALEO723"
+        start_time = datetime.now() - timedelta(days=100)
+        end_time = datetime.now()
+        ticker = "VALEO723"
         # asset = "VALE"
         # ohlcv = True
-        df = await aquant.get_trades()
+        df = await aquant.get_trades(
+            ticker=ticker, start_time=start_time, end_time=end_time
+        )
 
         # open_price = aquant.calculate_ohlcv_open(df)
         # high_price = aquant.calculate_ohlcv_high(df)
@@ -62,7 +65,7 @@ async def get_current_order_book_example():
     )
 
     try:
-        df = aquant.get_current_order_book(["VALE3F_Bid"])
+        df = aquant.get_current_order_book(["VALE3F_Bid"], 21)
         return df
     finally:
         aquant.shutdown()
