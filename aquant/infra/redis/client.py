@@ -1,64 +1,72 @@
 import redis
 
-from aquant.settings import settings
+from aquant.core.logger import Logger
 
 
 class RedisClient:
     def __init__(
         self,
-        redis_url: str = settings.REDIS_URL,
-        use_tls: bool = True,
+        logger: Logger,
+        redis_url: str,
+        use_tls: bool,
         max_connections: int = 10,
-        socket_timeout: float = 0.1,
+        socket_timeout: float = 5.0,
     ):
-        """
-        Initialize RedisClient with TLS support.
-
-        :param redis_url: Redis URL connection.
-        :param use_tls: Indicates if TLS must have be used for connection.
-        """
         self.redis_url = redis_url
+        self.logger = logger
         self.use_tls = use_tls
-        self.pool = self._create_connection_pool()
+        self.logger.info(
+            f"Inicializando RedisClient com URL: {redis_url} e TLS: {use_tls}"
+        )
+
+        self.pool = self._create_connection_pool(max_connections, socket_timeout)
         self.client = redis.StrictRedis(
             connection_pool=self.pool, decode_responses=False
         )
-        self.pool = redis.ConnectionPool.from_url(
-            redis_url,
-            connection_class=redis.SSLConnection if use_tls else redis.Connection,
+        self.logger.info("Redis client criado com sucesso.")
+
+    def _create_connection_pool(self, max_connections: int, socket_timeout: float):
+        connection_class = redis.SSLConnection if self.use_tls else redis.Connection
+        pool = redis.ConnectionPool.from_url(
+            self.redis_url,
+            connection_class=connection_class,
             max_connections=max_connections,
             socket_timeout=socket_timeout,
         )
-
-    def _create_connection_pool(self):
-        """
-        Creates a Redis ConnectionPool with TLS optional support.
-        """
-        connection_class = redis.SSLConnection if self.use_tls else redis.Connection
-        return redis.ConnectionPool.from_url(
-            self.redis_url, connection_class=connection_class
+        self.logger.info(
+            f"ConnectionPool criado com max_connections={max_connections} e socket_timeout={socket_timeout}"
         )
+        return pool
 
-    def get_client(self):
+    def get_client(self) -> redis.StrictRedis:
         """
-        Returns a Redis client.
+        Retorna o client do Redis.
         """
+        self.logger.info("Obtendo o client Redis.")
         return self.client
 
     def ping(self):
         """
-        Tests Redis connectivity.
+        Testa a conectividade com o Redis.
         """
-        return self.client.ping()
+        self.logger.info("Executando ping no Redis.")
+        try:
+            result = self.client.ping()
+            self.logger.info("Ping realizado com sucesso.")
+            return result
+        except Exception as e:
+            self.logger.error(f"Erro ao executar ping: {e}")
+            raise
 
-
-class RedisClientFactory:
-    @staticmethod
-    def create_client(redis_url: str, use_tls: bool = True) -> RedisClient:
+    def close(self) -> None:
         """
-        Creates an RedisClient instance with the given configurations.
-
-        :param redis_url: Redis URL connection.
-        :param use_tls: Indicates if TLS must have be used for connection.
+        Fecha a conexão com o Redis.
         """
-        return RedisClient(redis_url=redis_url, use_tls=use_tls)
+        self.logger.info("Fechando conexão com o Redis.")
+        try:
+            result = self.client.close()
+            self.logger.info("Conexão fechada com sucesso.")
+            return result
+        except Exception as e:
+            self.logger.error(f"Erro ao fechar a conexão: {e}")
+            raise

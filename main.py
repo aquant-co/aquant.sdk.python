@@ -65,7 +65,7 @@ async def get_current_order_book_example():
     )
 
     try:
-        df = aquant.get_current_order_book(["VALE3F_Bid"], 21)
+        df = aquant.get_current_order_book(["DOLK25"])
         return df
     finally:
         aquant.shutdown()
@@ -112,8 +112,9 @@ async def benchmark_books():
 
         start_time = time.perf_counter()
 
-        data = await get_broker_example()
+        data = await get_current_order_book_example()
 
+        print(data)
         execution_time = (time.perf_counter() - start_time) * 1000
         execution_times.append(execution_time)
 
@@ -123,7 +124,7 @@ async def benchmark_books():
     median_time = median(execution_times)
     max_time = max(execution_times)
 
-    print("[Trades]")
+    print("[Books]")
     print("Resultados de Temporização (milissegundos):")
     print(f"Recuperados {len(data) if data is not None else 0} registros")
     print(f"\033[92mMínimo: {min_time:.2f} ms\033[0m")
@@ -280,7 +281,7 @@ async def benchmark_securities():
 
 
 if __name__ == "__main__":
-    # asyncio.run(benchmark_books())
+    asyncio.run(benchmark_books())
     # asyncio.run(benchmark_broker())
     # asyncio.run(benchmark_securities())
-    asyncio.run(benchmark_trades())
+    # asyncio.run(benchmark_trades())

@@ -7,6 +7,7 @@ import pandas as pd
 from aquant.core.logger import Logger
 from aquant.core.utils import weak_lru
 from aquant.domains.marketdata.utils.dictionaries import BookColumnsList
+from aquant.domains.marketdata.utils.redis import generate_redis_keys
 from aquant.infra.redis import BufferedMessageProcessor, RedisClient
 
 
@@ -86,9 +87,16 @@ class MarketdataRepository:
             ]
         if not tickers:
             return pd.DataFrame(columns=self._columns)
+        keys = (
+            generate_redis_keys(tickers)
+            if side is None
+            else [
+                f"aquant.security,{ticker}.book.{s}" for ticker in tickers for s in side
+            ]
+        )
 
         pipe = self.redis_client.pipeline()
-        for key in tickers:
+        for key in keys:
             pipe.zrange(key, 0, max_entries - 1)
         raw_results = pipe.execute()
 
@@ -96,7 +104,7 @@ class MarketdataRepository:
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             future_to_key = {
                 executor.submit(self._process_key_entries, key, raw, max_entries): key
-                for key, raw in zip(tickers, raw_results, strict=False)
+                for key, raw in zip(keys, raw_results, strict=False)
             }
             for future in as_completed(future_to_key):
                 try:

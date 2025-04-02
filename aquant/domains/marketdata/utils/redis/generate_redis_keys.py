@@ -1,21 +1,8 @@
-def generate_redis_keys(tickers):
-    """
-    Generate Redis keys based on the provided tickers.
-
-    Args:
-        tickers (list[str]): List of tickers, where each ticker may optionally
-                            include a '.offer' or '.bid' suffix to specify
-                            the desired data type.
-
-    Returns:
-        list[str]: List of formatted keys for querying in Redis.
-    """
-
-    keys = [
-        f"aquant.stock.{base_ticker}.book.{side}"
+def generate_redis_keys(tickers: list[str]) -> list[str]:
+    return [
+        f"aquant.security.{base}.book.{side}"
         for ticker in tickers
-        for base_ticker, sep, side in [ticker.partition(".")]
-        if side in {"offer", "bid"} or not sep
-        for side in (["offer", "bid"] if not sep else [side])
+        for base, sep, s in [ticker.partition(".")]
+        if sep == "" or s in {"offer", "bid"}
+        for side in (["offer", "bid"] if sep == "" else [s])
     ]
-    return keys

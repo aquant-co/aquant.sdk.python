@@ -43,7 +43,7 @@ class Aquant:
         nats_servers: list[str],
         nats_user: str,
         nats_password: str,
-        redis_use_tls: bool = True,
+        redis_use_tls: bool = False,
     ) -> None:
         """
         Initializes the Aquant instance with the provided configuration.
@@ -72,7 +72,7 @@ class Aquant:
         nats_servers: list[str],
         nats_user: str,
         nats_password: str,
-        redis_use_tls: bool = True,
+        redis_use_tls: bool = False,
     ):
         """
         Factory asynchronous method for create and initialize one Aquant instance
@@ -110,7 +110,7 @@ class Aquant:
             ```
         """
         self.container.wire(modules=[__name__])
-        self.marketdata = self.container.marketdata.marketdata_service()
+        self.marketdata = await self.container.marketdata.marketdata_service()
         self.trade = await self.container.trade.trade_service()
         self.trade_payload_builder_service = (
             self.container.trade.trade_payload_builder_service()
