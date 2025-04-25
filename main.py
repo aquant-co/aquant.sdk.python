@@ -37,7 +37,7 @@ async def get_trades_example():
         # Parameters:
         start_time = datetime.now() - timedelta(days=100)
         end_time = datetime.now()
-        ticker = "VALEO723"
+        ticker = "DOLK25"
         # asset = "VALE"
         # ohlcv = True
         df = await aquant.get_trades(
@@ -281,7 +281,7 @@ async def benchmark_securities():
 
 
 if __name__ == "__main__":
-    asyncio.run(benchmark_books())
+    # asyncio.run(benchmark_books())
     # asyncio.run(benchmark_broker())
     # asyncio.run(benchmark_securities())
-    # asyncio.run(benchmark_trades())
+    asyncio.run(benchmark_trades())
