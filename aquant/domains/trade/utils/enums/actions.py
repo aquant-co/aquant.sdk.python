@@ -22,3 +22,6 @@ class Actions(Enum):
     GET_OPEN_HIGH_LOW_CLOSED_VOLUME_BY_TIMERANGE = (
         "get_open_high_low_closed_volume_by_timerange"
     )
+    GET_OPEN_HIGH_LOW_CLOSE_VOLUME_BY_TICKER_TIMERANGE_AND_INTERVAL = (
+        "get_open_high_low_close_volume_by_ticker_timerange_and_interval"
+    )
