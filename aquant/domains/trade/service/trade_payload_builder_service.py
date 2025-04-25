@@ -2,7 +2,7 @@ from datetime import datetime
 
 from aquant.core.logger import Logger
 from aquant.domains.trade.dtos import TradeDTO, TradeParamsDTO
-from aquant.domains.trade.utils.enums import Actions
+from aquant.domains.trade.utils.enums import Actions, TimescaleIntervalEnum
 
 
 class TradePayloadBuilderService:
@@ -26,6 +26,12 @@ class TradePayloadBuilderService:
             "ticker",
             "timerange",
         ): Actions.GET_OPEN_HIGH_LOW_CLOSED_VOLUME_BY_TICKER_AND_TIMERANGE.value,
+        (
+            "ticker",
+            "interval",
+            "start_time",
+            "end_time",
+        ): Actions.GET_OPEN_HIGH_LOW_CLOSE_VOLUME_BY_TICKER_TIMERANGE_AND_INTERVAL.value,
         (
             "asset",
             "timerange",
@@ -94,24 +100,35 @@ class TradePayloadBuilderService:
             raise RuntimeError(f"Unknown error building trade payload: {e}") from e
 
     @staticmethod
-    def validate_params(ticker, asset, start_time, end_time):
+    def validate_params(ticker, interval, asset, start_time, end_time):
         """
         Validates the input parameters before processing.
         """
         if asset is not None and not isinstance(asset, str):
-            raise ValueError(f"Expected 'asset' to be a string, but got {type(asset)}")
+            raise ValueError(
+                f"Expected 'asset' to be a string, but got {type(asset)}"
+                f"Please, see the docs at section #GetTrades: README.md"
+            )
 
         if ticker is not None and not isinstance(ticker, str):
             raise ValueError(
                 f"Expected 'ticker' to be a string, but got {type(ticker)}"
+                f"Please, see the docs at section #GetTrades: README.md"
+            )
+        if interval is not None and not isinstance(interval, TimescaleIntervalEnum):
+            raise ValueError(
+                f"Expected 'interval' to be a TimescaleEnum value, but got {type(interval)}"
+                f"Please, see the docs at section #GetTrades: README.md"
             )
 
         if start_time is not None and not isinstance(start_time, datetime):
             raise ValueError(
                 f"Expected 'start_time' to be a datetime, but got {type(start_time)}"
+                f"Please, see the docs at section #GetTrades: README.md"
             )
 
         if end_time is not None and not isinstance(end_time, datetime):
             raise ValueError(
                 f"Expected 'end_time' to be a datetime, but got {type(end_time)}"
+                f"Please, see the docs at section #GetTrades: README.md"
             )

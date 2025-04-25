@@ -26,7 +26,7 @@ from pydantic.dataclasses import dataclass
         },
     )
 )
-class OpenHighLowCloseVoume:
+class OpenHighLowCloseVolume:
     """Open High Low Close Volume (OHLCV) data model."""
 
     ticker: str = Field(..., description="ticker symbol")
@@ -40,8 +40,8 @@ class OpenHighLowCloseVoume:
     @model_validator(mode="after")
     @classmethod
     def check_price_consistency(
-        cls, model: "OpenHighLowCloseVoume"
-    ) -> "OpenHighLowCloseVoume":
+        cls, model: "OpenHighLowCloseVolume"
+    ) -> "OpenHighLowCloseVolume":
         open_price, high_price, low_price, close_price = (
             model.open_price,
             model.high_price,

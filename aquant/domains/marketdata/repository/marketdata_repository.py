@@ -17,14 +17,12 @@ class MarketdataRepository:
         logger: Logger,
         redis_client: RedisClient,
         processor: BufferedMessageProcessor,
-        # max_entries: int = 50000,
         max_workers: int = 4,
     ) -> None:
         self.logger = logger
         self.redis_client = redis_client.get_client()
         self.processor = processor
         self._columns: list[str] = BookColumnsList
-        # self.max_entries = max_entries
         self.max_workers = max_workers
 
     @staticmethod
@@ -33,13 +31,9 @@ class MarketdataRepository:
         return json_lib.loads(b)
 
     def _process_key_entries(
-        self, key: str, raw_entries: list[bytes], max_entries: int
+        self, key: str, entries_list: list[dict[str, Any]], max_entries: int
     ) -> dict[str, list[Any]]:
-        """
-        Process entries for a single Redis key.
-        Decodes and extracts fields in one pass.
-        """
-        entries: dict[str, list[Any]] = {
+        cols = {
             "key": [],
             "entry_time": [],
             "price": [],
@@ -47,23 +41,39 @@ class MarketdataRepository:
             "broker_id": [],
             "fk_order_id": [],
         }
-        for entry_bytes in raw_entries[:max_entries]:
+
+        for entry in entries_list[:max_entries]:
             try:
-                entry = self.decode_json(entry_bytes)
+                date_str = entry["entry_date"]
+                t_int = entry["entry_time"]
+                s = f"{t_int:09d}"
+                hh, mm, ss, ms = (int(s[0:2]), int(s[2:4]), int(s[4:6]), int(s[6:]))
+                ts = pd.Timestamp(
+                    year=int(date_str[0:4]),
+                    month=int(date_str[4:6]),
+                    day=int(date_str[6:8]),
+                    hour=hh,
+                    minute=mm,
+                    second=ss,
+                    microsecond=ms * 1_000,
+                )
+
                 self.processor.process(entry)
-                entries["key"].append(key)
-                entries["entry_time"].append(entry.get("entry_time"))
-                entries["price"].append(entry.get("price"))
-                entries["quantity"].append(entry.get("quantity"))
-                entries["broker_id"].append(entry.get("broker_id"))
-                entries["fk_order_id"].append(entry.get("fk_order_id"))
+
+                cols["key"].append(key)
+                cols["entry_time"].append(ts)
+                cols["price"].append(entry["price"])
+                cols["quantity"].append(entry["quantity"])
+                cols["broker_id"].append(entry["broker_id"])
+                cols["fk_order_id"].append(entry["fk_order_id"])
+
             except Exception as e:
                 self.logger.warning(f"Skipping invalid entry for {key}: {e}")
-        return entries
+
+        return cols
 
     @weak_lru(maxsize=128)
     def get_current_book_cached(self, ticker_tuple: tuple[str, ...]) -> pd.DataFrame:
-        """Cache recent queries. Convert the ticker list to a tuple for hashability."""
         return self.get_current_book(list(ticker_tuple))
 
     def get_current_book(
@@ -74,10 +84,6 @@ class MarketdataRepository:
         max_age_minutes: int = 5,
         only_recent: bool = False,
     ) -> pd.DataFrame:
-        """
-        Fetch order book data from Redis for the provided tickers and return a DataFrame.
-        If only_recent is True, filter rows based on the entry_time column.
-        """
         if only_recent:
             current_time = pd.Timestamp.now()
             df = super().get_current_book(tickers)
@@ -85,36 +91,51 @@ class MarketdataRepository:
                 df["entry_time"]
                 > (current_time - pd.Timedelta(minutes=max_age_minutes))
             ]
+
         if not tickers:
             return pd.DataFrame(columns=self._columns)
+
         keys = (
             generate_redis_keys(tickers)
             if side is None
-            else [
-                f"aquant.security,{ticker}.book.{s}" for ticker in tickers for s in side
-            ]
+            else [f"aquant.security,{t}.book.{s}" for t in tickers for s in side]
         )
 
         pipe = self.redis_client.pipeline()
         for key in keys:
-            pipe.zrange(key, 0, max_entries - 1)
+            pipe.get(key)
         raw_results = pipe.execute()
 
-        all_entries: dict[str, list[Any]] = {col: [] for col in self._columns}
+        decoded_lists: list[list[dict[str, Any]]] = []
+        for key, raw in zip(keys, raw_results, strict=False):
+            if raw:
+                try:
+                    arr = json_lib.loads(raw)
+                    if isinstance(arr, dict):
+                        arr = [arr]
+                except Exception as e:
+                    self.logger.warning(f"Invalid JSON for {key}: {e}")
+                    arr = []
+            else:
+                arr = []
+            decoded_lists.append(arr)
+
+        all_entries: dict[str, list[Any]] = {c: [] for c in self._columns}
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             future_to_key = {
-                executor.submit(self._process_key_entries, key, raw, max_entries): key
-                for key, raw in zip(keys, raw_results, strict=False)
+                executor.submit(
+                    self._process_key_entries, key, entries_list, max_entries
+                ): key
+                for key, entries_list in zip(keys, decoded_lists, strict=False)
             }
             for future in as_completed(future_to_key):
+                key = future_to_key[future]
                 try:
-                    key_entries = future.result()
-                    for col in all_entries:
-                        all_entries[col].extend(key_entries[col])
+                    cols = future.result()
+                    for col, vals in cols.items():
+                        all_entries[col].extend(vals)
                 except Exception as e:
-                    self.logger.error(
-                        f"Error processing key {future_to_key[future]}: {e}"
-                    )
+                    self.logger.error(f"Error processing key {key}: {e}")
 
         if not all_entries["key"]:
             return pd.DataFrame(columns=self._columns)
@@ -122,14 +143,14 @@ class MarketdataRepository:
         df = pd.DataFrame(
             {
                 "key": pd.Series(all_entries["key"], dtype="category"),
-                "entry_time": pd.to_datetime(
-                    all_entries["entry_time"], format="%Y%m%d%H%M%S.%f", errors="coerce"
-                ),
+                "entry_time": all_entries["entry_time"],
                 "price": all_entries["price"],
                 "quantity": all_entries["quantity"],
                 "broker_id": all_entries["broker_id"],
                 "fk_order_id": all_entries["fk_order_id"],
             }
         )
+
+        self.processor.flush()
 
         return df
