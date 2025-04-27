@@ -44,6 +44,7 @@ class TradePayloadBuilderService:
     def trade_payload_builder(
         self,
         ticker: str | None = None,
+        interval: TimescaleIntervalEnum | None = None,
         asset: str | None = None,
         start_time: datetime | None = None,
         end_time: datetime | None = None,
@@ -66,22 +67,29 @@ class TradePayloadBuilderService:
             ValueError: If incorrect parameter types are provided.
         """
         try:
-            self.validate_params(ticker, asset, start_time, end_time)
+            self.validate_params(ticker, interval, asset, start_time, end_time)
 
             params_dto = TradeParamsDTO(
-                ticker=ticker, asset=asset, start_time=start_time, end_time=end_time
+                ticker=ticker,
+                interval=interval.value,
+                asset=asset,
+                start_time=start_time,
+                end_time=end_time,
             )
 
-            key = tuple(
-                filter(
-                    None,
-                    [
-                        "ticker" if ticker else None,
-                        "asset" if asset else None,
-                        "timerange" if start_time and end_time else None,
-                    ],
-                )
-            )
+            parts: list[str] = []
+            if ticker is not None:
+                parts.append("ticker")
+            if asset is not None:
+                parts.append("asset")
+            if interval is not None:
+                parts.append("interval")
+            if start_time is not None:
+                parts.append("start_time")
+            if end_time is not None:
+                parts.append("end_time")
+
+            key = tuple(parts)
 
             action_map = self.ACTIONS_OHLCV_MAP if ohlcv else self.ACTIONS_MAP
             action = action_map.get(key)
@@ -117,7 +125,7 @@ class TradePayloadBuilderService:
             )
         if interval is not None and not isinstance(interval, TimescaleIntervalEnum):
             raise ValueError(
-                f"Expected 'interval' to be a TimescaleEnum value, but got {type(interval)}"
+                f"Expected 'interval' to be a TimescaleIntervalEnum value, but got {type(interval)}"
                 f"Please, see the docs at section #GetTrades: README.md"
             )
 

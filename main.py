@@ -1,8 +1,10 @@
 import asyncio
 import time
+from datetime import datetime, timedelta
 from statistics import median
 
 from aquant import Aquant
+from aquant.domains.trade.utils.enums import TimescaleIntervalEnum
 from aquant.settings import settings
 
 """ Only for tests purpose """
@@ -33,13 +35,18 @@ from aquant.settings import settings
 
 #     try:
 #         # Parameters:
-#         start_time = datetime.now() - timedelta(days=100)
-#         end_time = datetime.now()
+#         start_time = datetime.now() - timedelta(days=10)
+#         end_time = datetime.now() + timedelta(days=1)
+
 #         ticker = "DOLK25"
 #         # asset = "VALE"
 #         # ohlcv = True
 #         df = await aquant.get_trades(
-#             ticker=ticker, start_time=start_time, end_time=end_time
+#             ticker=ticker,
+#             interval=TimescaleIntervalEnum.MINUTE_15,
+#             start_time=start_time,
+#             end_time=end_time,
+#             ohlcv=True
 #         )
 
 #         # open_price = aquant.calculate_ohlcv_open(df)
@@ -134,6 +141,53 @@ async def benchmark_books():
     print("____")
 
     return min_time
+
+
+async def benchmark_trades():
+    aquant = await Aquant.create(
+        redis_url=settings.REDIS_URL,
+        nats_servers=[settings.NATS_URL],
+        nats_user=settings.AQUANT_NATS_USER,
+        nats_password=settings.AQUANT_NATS_PASSWORD,
+    )
+    try:
+        start_time = datetime.now() - timedelta(days=10)
+        end_time = datetime.now()
+
+        execution_times = []
+        df = None
+
+        for _ in range(5):
+            t0 = time.perf_counter()
+            df = await aquant.get_trades(
+                ticker="DOLK25",
+                interval=TimescaleIntervalEnum.MINUTE_15,
+                start_time=start_time,
+                end_time=end_time,
+                ohlcv=True,
+            )
+            elapsed = (time.perf_counter() - t0) * 1000
+            execution_times.append(elapsed)
+            await asyncio.sleep(0.1)
+
+        min_t = min(execution_times)
+        med_t = median(execution_times)
+        max_t = max(execution_times)
+
+        print("[OHLCV]")
+        print(df)
+        print("Resultados de Temporização (ms):")
+        print(f"Recuperados {df.shape[0]} registros")
+        print(f"\033[92mMínimo:  {min_t:.2f} ms\033[0m")
+        print(f"\033[93mMediana: {med_t:.2f} ms\033[0m")
+        print(f"\033[91mMáximo:  {max_t:.2f} ms\033[0m")
+        print(
+            f"\033[94mExecuções individuais: {[f'{t:.2f}' for t in execution_times]}\033[0m"
+        )
+        print("____")
+
+    finally:
+        aquant.shutdown()
 
 
 # async def benchmark_trades():
@@ -279,7 +333,7 @@ async def benchmark_books():
 
 
 if __name__ == "__main__":
-    asyncio.run(benchmark_books())
+    # asyncio.run(benchmark_books())
     # asyncio.run(benchmark_broker())
     # asyncio.run(benchmark_securities())
-    # asyncio.run(benchmark_trades())
+    asyncio.run(benchmark_trades())

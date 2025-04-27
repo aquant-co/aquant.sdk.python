@@ -4,6 +4,7 @@ import pandas as pd
 
 from aquant.core.dependencies.containers import AquantContainer
 from aquant.domains.trade.entity import OpenHighLowCloseVolume
+from aquant.domains.trade.utils.enums import TimescaleIntervalEnum
 
 
 class Aquant:
@@ -159,6 +160,7 @@ class Aquant:
     async def get_trades(
         self,
         ticker: str | None = None,
+        interval: TimescaleIntervalEnum | None = None,
         asset: str | None = None,
         start_time: datetime | None = None,
         end_time: datetime | None = None,
@@ -171,6 +173,7 @@ class Aquant:
 
         Args:
             ticker (Optional[str]): The ticker symbol for the asset.
+            interval(Optional[TimescaleIntervalEnum]): The interval of the desired candle
             asset (Optional[str]): The asset identifier.
             start_time (Optional[datetime]): The beginning of the time range for fetching trades.
             end_time (Optional[datetime]): The end of the time range for fetching trades.
@@ -203,6 +206,7 @@ class Aquant:
 
         return await self.trade.get_trades(
             ticker=ticker,
+            interval=interval,
             asset=asset,
             start_time=start_time,
             end_time=end_time,

@@ -8,6 +8,11 @@ from aquant.domains.trade.service.trade_parser_service import TradeParserService
 from aquant.domains.trade.service.trade_payload_builder_service import (
     TradePayloadBuilderService,
 )
+from aquant.domains.trade.utils.enums import TimescaleIntervalEnum
+from aquant.domains.trade.utils.parse_trades_binary_to_dataframe import (
+    ohlcv_to_df,
+    trades_to_df,
+)
 from aquant.infra.nats import NatsClient, NatsSubjects
 
 
@@ -27,6 +32,7 @@ class TradeService:
     async def get_trades(
         self,
         ticker: str | None = None,
+        interval: TimescaleIntervalEnum | None = None,
         asset: str | None = None,
         start_time: datetime | None = None,
         end_time: datetime | None = None,
@@ -36,19 +42,21 @@ class TradeService:
             subject = NatsSubjects.MARKETDATA_TRADE_REQUEST.value
             payload = self.trade_payload_builder_service.trade_payload_builder(
                 ticker=ticker,
+                interval=interval,
                 asset=asset,
                 start_time=start_time,
                 end_time=end_time,
                 ohlcv=ohlcv,
             )
-            message = self.trade_parser_service.encode_trades(message=payload)
+            message = self.trade_parser_service.encode(message=payload)
             response = await self.nats_client.request(subject, message, timeout=20)
-            if ohlcv is False:
-                return self.trade_parser_service.parse_trades_to_dataframe(response)
-            else:
-                return self.trade_parser_service.decode_open_high_low_closed_volume(
-                    response
-                )
+
+            if not ohlcv:
+                trades = self.trade_parser_service.trade_codec.decode_trades(response)
+                return trades_to_df(trades)
+
+            return ohlcv_to_df(response)
+
         except Exception as e:
             self.logger.error(
                 f"Error trying to fetch trades for timerange provided. start_time: {start_time}, end_time: {end_time}, due: {e}"
