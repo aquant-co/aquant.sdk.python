@@ -3,7 +3,35 @@ import logging
 import numpy as np
 import pandas as pd
 
+from aquant.domains.trade.entity import Trade
+
 logger = logging.getLogger("TradeService")
+
+
+def trades_to_df(trades: list[Trade]) -> pd.DataFrame:
+    return pd.DataFrame([t.__dict__ for t in trades])
+
+
+def ohlcv_to_df(blob: bytes) -> pd.DataFrame:
+    dtype = np.dtype(
+        [
+            ("ticker", "S10"),
+            ("timestamp", "<u8"),
+            ("open", "f8"),
+            ("high", "f8"),
+            ("low", "f8"),
+            ("close", "f8"),
+            ("volume", "f8"),
+        ]
+    )
+    arr = np.frombuffer(blob, dtype=dtype)
+    df = pd.DataFrame(arr)
+    df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ns")
+    tickers = np.char.decode(arr["ticker"], encoding="ascii")
+    tickers = np.char.rstrip(tickers, "\x00")
+    df["ticker"] = tickers
+
+    return df
 
 
 # -----------------------------------------------------------------------------

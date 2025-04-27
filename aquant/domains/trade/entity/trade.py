@@ -1,41 +1,29 @@
-from datetime import UTC, datetime
+from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
-from pydantic import BaseModel, Field
 
+@dataclass(slots=True)
+class Trade:
+    """Lightweight Trade data model."""
 
-class Trade(BaseModel):
     ticker: str | None
     asset: str | None
-    fk_order_id: str | None = Field(
-        ...,
-        description="External order id of the trade informed by the stock exchange integration system",
-    )
-    event_time: datetime = Field(
-        default_factory=lambda: datetime.now(UTC),
-        description="Timestamp of the trade used for time-series analysis",
-    )
-    price: Decimal = Field(..., description="The trade price")
-    quantity: Decimal = Field(..., description="The quantity traded in this movement")
-    side: str | None = Field(
-        ...,
-        min_length=1,
-        max_length=1,
-        description='Indicates if the trade is a "Buy" (B) or "Sell" (S)',
-    )
-    tick_direction: str | None | None = Field(
-        None,
-        min_length=1,
-        max_length=1,
-        description="Refers to the movement of a stock's price",
-    )
-    seller_id: int = Field(
-        ..., description="Represents the broker responsible for selling the stock"
-    )
-    buyer_id: int = Field(
-        ..., description="Represents the broker responsible for buying the stock"
-    )
+    fk_order_id: str | None
+    event_time: datetime
+    price: Decimal
+    quantity: Decimal
+    side: Literal["B", "S"] | None
+    tick_direction: str | None
+    seller_id: int
+    buyer_id: int
 
-    class Config:
-        from_attributes = True
-        orm_mode: True
+    def __repr__(self) -> str:
+        return (
+            f"Trade(ticker={self.ticker!r}, asset={self.asset!r}, "
+            f"fk_order_id={self.fk_order_id!r}, event_time={self.event_time!r}, "
+            f"price={self.price!r}, quantity={self.quantity!r}, "
+            f"side={self.side!r}, tick_direction={self.tick_direction!r}, "
+            f"seller_id={self.seller_id}, buyer_id={self.buyer_id})"
+        )
