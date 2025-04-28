@@ -6,10 +6,6 @@ from aquant.core.logger import Logger
 from aquant.domains.trade.codecs import TradeParserService, TradePayloadBuilderService
 from aquant.domains.trade.entity import OpenHighLowCloseVolume
 from aquant.domains.trade.utils.enums import TimescaleIntervalEnum
-from aquant.domains.trade.utils.parse_trades_binary_to_dataframe import (
-    ohlcv_to_df,
-    parse_trades_binary_to_dataframe,
-)
 from aquant.infra.nats import NatsClient, NatsSubjects
 
 
@@ -49,12 +45,19 @@ class TradeService:
             response = await self.nats_client.request(subject, message, timeout=20)
 
             if not ohlcv:
-                return parse_trades_binary_to_dataframe(response)
+                return self.trade_parser_service.decode_trades_into_dataframe(response)
 
-            return ohlcv_to_df(response)
+            return self.trade_parser_service.decode_ohlcv_into_dataframe(response)
 
         except Exception as e:
+            params = {
+                "ticker": ticker,
+                "interval": interval,
+                "asset": asset,
+                "start_time": start_time,
+                "end_time": end_time,
+            }
             self.logger.error(
-                f"Error trying to fetch trades for timerange provided. start_time: {start_time}, end_time: {end_time}, due: {e}"
+                f"Error trying to fetch trades or open high low close volume with the parameters provided: {params}, due: {e}"
             )
             raise e

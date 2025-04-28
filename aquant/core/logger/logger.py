@@ -18,24 +18,27 @@ class Logger(LoggerInterface):
         Args:
             name (str): Logger name, typically the module name.
         """
-        level = (
-            settings.LOG_LEVEL
-            if isinstance(settings.LOG_LEVEL, int)
-            else getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
-        )
 
+        raw = settings.LOG_LEVEL
+        if isinstance(raw, str):
+            level = getattr(logging, raw.upper(), logging.INFO)
+        elif isinstance(raw, int):
+            level = raw
+        else:
+            level = logging.INFO
+
+        # configura o stdlib logger
         self.logger = logging.getLogger(name)
         self.logger.setLevel(level)
         self.logger.propagate = False
+        # limpa handlers antigos
+        self.logger.handlers.clear()
 
-        formatter = LoggerFormatter()
-
+        # adiciona o handler JSON
         handler = logging.StreamHandler(sys.stdout)
-        handler.setFormatter(formatter)
         handler.setLevel(level)
-
-        if not self.logger.hasHandlers():
-            self.logger.addHandler(handler)
+        handler.setFormatter(LoggerFormatter())
+        self.logger.addHandler(handler)
 
     def info(self, message: str) -> None:
         """

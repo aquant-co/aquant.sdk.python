@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     NATS_URL: str = ""
     AQUANT_NATS_USER: str = ""
     AQUANT_NATS_PASSWORD: str = ""
-    LOG_LEVEL: str = "DEBUG"
+    LOG_LEVEL: str = ""
 
     class Config:
         env_file = ".env"

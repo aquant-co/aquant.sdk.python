@@ -1,5 +1,7 @@
 from typing import Union
 
+import pandas as pd
+
 from aquant.core.logger import Logger
 from aquant.domains.trade.codecs import (
     OpenHighLowCloseVolumeBinaryCodec,
@@ -29,6 +31,12 @@ class TradeParserService:
 
     def encode(self, message: TradeDTO) -> bytes:
         return self.trade_request_codec.encode(message)
+
+    def decode_trades_into_dataframe(self, message: bytes) -> pd.DataFrame:
+        return self.trade_codec.parse_trades_binary_to_dataframe(message)
+
+    def decode_ohlcv_into_dataframe(self, message: bytes) -> pd.DataFrame:
+        return self.ohlcv_codec.parse_ohlcv_binary_into_dataframe(message)
 
     def decode(self, blob: bytes) -> list[Parsed]:
         size = len(blob)
