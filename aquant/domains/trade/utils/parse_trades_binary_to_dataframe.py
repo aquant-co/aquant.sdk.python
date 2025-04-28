@@ -34,80 +34,82 @@ def ohlcv_to_df(blob: bytes) -> pd.DataFrame:
     return df
 
 
-# -----------------------------------------------------------------------------
-# Helper Function: Convert Binary Trade Data to DataFrame
-# -----------------------------------------------------------------------------
 def parse_trades_binary_to_dataframe(binary_data: bytes) -> pd.DataFrame:
     """
-    Converts binary data from md_security_movement into a pandas DataFrame.
+    Decodes a bytes array contendo N registros sequenciais no formato:
+      - 20s   ticker (ASCII padded)
+      - 20s   asset  (ASCII padded)
+      - 20s   fk_order_id (ASCII padded)
+      - Q     event_time (uint64 nanoseconds since epoch)
+      - 50s   price_ascii (ASCII padded)
+      - d     quantity (float64)
+      - 1s    side (ASCII)
+      - 1s    tick_direction (ASCII)
+      - I     seller_id (uint32)
+      - I     buyer_id  (uint32)
+
+    Retorna um DataFrame com colunas:
+      ticker, asset, fk_order_id, buyer_id, seller_id,
+      price (float), quantity, side, tick_direction, event_time (datetime64[ns]).
     """
-    logger.info(f"🔹 Received {len(binary_data)} bytes of binary data.")
 
-    if len(binary_data) < 4:
-        logger.warning(
-            "⚠️ Binary data too small to contain header. Returning empty DataFrame."
-        )
-        return pd.DataFrame(
-            columns=[
-                "security_id",
-                "ticker",
-                "buyer_id",
-                "seller_id",
-                "fk_order_id",
-                "price",
-                "quantity",
-                "side",
-                "tick_direction",
-                "event_time",
-            ]
-        )
-
-    num_records_header = int.from_bytes(binary_data[:4], byteorder="big")
+    n = len(binary_data)
+    logger.info(f"🔹 Received {n} bytes of binary trade-data.")
 
     dtype = np.dtype(
         [
-            ("security_id", ">u4"),
             ("ticker", "S20"),
-            ("buyer_id", ">u4"),
-            ("seller_id", ">u4"),
+            ("asset", "S20"),
             ("fk_order_id", "S20"),
-            ("price", ">f8"),
+            ("event_time", ">u8"),
+            ("price_ascii", "S50"),
             ("quantity", ">f8"),
             ("side", "S1"),
             ("tick_direction", "S1"),
-            ("event_time", ">u8"),
+            ("seller_id", ">u4"),
+            ("buyer_id", ">u4"),
         ]
     )
-    record_size = dtype.itemsize
-    num_records_actual = (len(binary_data) - 4) // record_size
-    num_records = min(num_records_header, num_records_actual)
-    expected_length = 4 + num_records * record_size
+    rec_size = dtype.itemsize
+    if n % rec_size != 0:
+        logger.warning(f"✂️  {n} não é múltiplo de {rec_size}, truncando extras.")
+    count = n // rec_size
 
-    if len(binary_data) < expected_length:
-        logger.error(
-            f"Binary data size mismatch! Expected {expected_length} bytes, got {len(binary_data)} bytes."
-        )
-        raise ValueError("Binary data size does not match expected size.")
+    arr = np.frombuffer(binary_data, dtype=dtype, count=count)
 
-    try:
-        records = np.frombuffer(binary_data, dtype=dtype, offset=4, count=num_records)
-    except ValueError as e:
-        logger.error(f"Error parsing binary data: {e}.")
-        raise
+    arr = arr.astype(arr.dtype.newbyteorder("="))
 
-    records = records.astype(records.dtype.newbyteorder("="))
+    df = pd.DataFrame(arr)
 
-    logger.info(
-        f"Successfully parsed {num_records} records into a structured NumPy array."
+    df[["ticker", "asset", "fk_order_id", "price_ascii", "side", "tick_direction"]] = (
+        df[
+            ["ticker", "asset", "fk_order_id", "price_ascii", "side", "tick_direction"]
+        ].applymap(lambda b: b.decode("ascii", errors="ignore"))
     )
 
-    df = pd.DataFrame(records)
+    df["ticker"] = df["ticker"].str.rstrip("\x00")
+    df["asset"] = df["asset"].str.rstrip("\x00")
+    df["fk_order_id"] = df["fk_order_id"].str.rstrip("\x00")
+    df["price_ascii"] = df["price_ascii"].str.rstrip("\x00")
+    df["side"] = df["side"].str.rstrip("\x00")
+    df["tick_direction"] = df["tick_direction"].str.rstrip("\x00")
+    df["event_time"] = pd.to_datetime(df["event_time"], unit="ns")
+    df["price"] = pd.to_numeric(df["price_ascii"], errors="coerce")
 
-    df["event_time"] = pd.to_datetime(df["event_time"], unit="ns", errors="coerce")
+    df = df[
+        [
+            "ticker",
+            "asset",
+            "fk_order_id",
+            "buyer_id",
+            "seller_id",
+            "price",
+            "quantity",
+            "side",
+            "tick_direction",
+            "event_time",
+        ]
+    ]
 
-    df["side"] = df["side"].str.decode("ascii", errors="ignore")
-    df["tick_direction"] = df["tick_direction"].str.decode("ascii", errors="ignore")
-    df["fk_order_id"] = df["fk_order_id"].str.decode("ascii", errors="ignore")
-
-    logger.info(f"Converted binary data to DataFrame with {df.shape[0]} rows.")
+    logger.info(f"✅ Parsed {len(df)} trades into DataFrame.")
     return df

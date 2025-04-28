@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from statistics import median
 
 from aquant import Aquant
-from aquant.domains.trade.utils.enums import TimescaleIntervalEnum
 from aquant.settings import settings
 
 """ Only for tests purpose """
@@ -157,14 +156,14 @@ async def benchmark_trades():
         execution_times = []
         df = None
 
-        for _ in range(5):
+        for _ in range(1):
             t0 = time.perf_counter()
             df = await aquant.get_trades(
                 ticker="DOLK25",
-                interval=TimescaleIntervalEnum.MINUTE_15,
+                # interval=TimescaleIntervalEnum.MINUTE_15,
                 start_time=start_time,
                 end_time=end_time,
-                ohlcv=True,
+                # ohlcv=True,
             )
             elapsed = (time.perf_counter() - t0) * 1000
             execution_times.append(elapsed)

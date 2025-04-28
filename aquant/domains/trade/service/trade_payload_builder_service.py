@@ -14,31 +14,40 @@ class TradePayloadBuilderService:
         self.logger = logger
 
     ACTIONS_MAP = {
-        ("ticker", "timerange"): Actions.GET_TRADES_BY_TICKER_AND_TIMERANGE.value,
-        ("asset", "timerange"): Actions.GET_TRADES_BY_ASSET_AND_TIMERANGE.value,
-        ("timerange",): Actions.GET_TRADES_BY_TIMERANGE.value,
-        ("ticker",): Actions.GET_TRADES_BY_TICKER.value,
-        ("asset",): Actions.GET_TRADES_BY_ASSET.value,
+        (
+            "ticker",
+            "start_time",
+            "end_time",
+        ): Actions.GET_TRADES_BY_TICKER_AND_TIMERANGE,
+        ("asset", "start_time", "end_time"): Actions.GET_TRADES_BY_ASSET_AND_TIMERANGE,
+        ("start_time", "end_time"): Actions.GET_TRADES_BY_TIMERANGE,
+        ("ticker",): Actions.GET_TRADES_BY_TICKER,
+        ("asset",): Actions.GET_TRADES_BY_ASSET,
     }
 
     ACTIONS_OHLCV_MAP = {
         (
             "ticker",
-            "timerange",
-        ): Actions.GET_OPEN_HIGH_LOW_CLOSED_VOLUME_BY_TICKER_AND_TIMERANGE.value,
+            "start_time",
+            "end_time",
+        ): Actions.GET_OPEN_HIGH_LOW_CLOSED_VOLUME_BY_TICKER_AND_TIMERANGE,
         (
             "ticker",
             "interval",
             "start_time",
             "end_time",
-        ): Actions.GET_OPEN_HIGH_LOW_CLOSE_VOLUME_BY_TICKER_TIMERANGE_AND_INTERVAL.value,
+        ): Actions.GET_OPEN_HIGH_LOW_CLOSE_VOLUME_BY_TICKER_TIMERANGE_AND_INTERVAL,
         (
             "asset",
-            "timerange",
-        ): Actions.GET_OPEN_HIGH_LOW_CLOSED_VOLUME_BY_ASSET_AND_TIMERANGE.value,
-        ("timerange",): Actions.GET_OPEN_HIGH_LOW_CLOSED_VOLUME_BY_TIMERANGE.value,
-        ("ticker",): Actions.GET_OPEN_HIGH_LOW_CLOSED_VOLUME_BY_TICKER.value,
-        ("asset",): Actions.GET_OPEN_HIGH_LOW_CLOSED_VOLUME_BY_ASSET.value,
+            "start_time",
+            "end_time",
+        ): Actions.GET_OPEN_HIGH_LOW_CLOSED_VOLUME_BY_ASSET_AND_TIMERANGE,
+        (
+            "start_time",
+            "end_time",
+        ): Actions.GET_OPEN_HIGH_LOW_CLOSED_VOLUME_BY_TIMERANGE,
+        ("ticker",): Actions.GET_OPEN_HIGH_LOW_CLOSED_VOLUME_BY_TICKER,
+        ("asset",): Actions.GET_OPEN_HIGH_LOW_CLOSED_VOLUME_BY_ASSET,
     }
 
     def trade_payload_builder(
@@ -71,7 +80,7 @@ class TradePayloadBuilderService:
 
             params_dto = TradeParamsDTO(
                 ticker=ticker,
-                interval=interval.value,
+                interval=interval,
                 asset=asset,
                 start_time=start_time,
                 end_time=end_time,
@@ -92,7 +101,7 @@ class TradePayloadBuilderService:
             key = tuple(parts)
 
             action_map = self.ACTIONS_OHLCV_MAP if ohlcv else self.ACTIONS_MAP
-            action = action_map.get(key)
+            action = action_map[key]
 
             if not action:
                 raise ValueError("At least 'ticker' or 'asset' must be provided.")

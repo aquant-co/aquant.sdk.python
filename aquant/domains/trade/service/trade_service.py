@@ -11,7 +11,7 @@ from aquant.domains.trade.service.trade_payload_builder_service import (
 from aquant.domains.trade.utils.enums import TimescaleIntervalEnum
 from aquant.domains.trade.utils.parse_trades_binary_to_dataframe import (
     ohlcv_to_df,
-    trades_to_df,
+    parse_trades_binary_to_dataframe,
 )
 from aquant.infra.nats import NatsClient, NatsSubjects
 
@@ -52,8 +52,7 @@ class TradeService:
             response = await self.nats_client.request(subject, message, timeout=20)
 
             if not ohlcv:
-                trades = self.trade_parser_service.trade_codec.decode_trades(response)
-                return trades_to_df(trades)
+                return parse_trades_binary_to_dataframe(response)
 
             return ohlcv_to_df(response)
 
