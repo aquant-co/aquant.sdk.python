@@ -27,14 +27,11 @@ class Logger(LoggerInterface):
         else:
             level = logging.INFO
 
-        # configura o stdlib logger
         self.logger = logging.getLogger(name)
         self.logger.setLevel(level)
         self.logger.propagate = False
-        # limpa handlers antigos
         self.logger.handlers.clear()
 
-        # adiciona o handler JSON
         handler = logging.StreamHandler(sys.stdout)
         handler.setLevel(level)
         handler.setFormatter(LoggerFormatter())
