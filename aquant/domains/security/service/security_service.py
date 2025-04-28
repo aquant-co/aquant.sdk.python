@@ -25,7 +25,7 @@ class SecurityService:
             response = await self.nats_client.request(subject, message, timeout=5)
             response_decoded = decode_securities(response=response)
 
-            self.logger.info(f"Retrieved {len(response_decoded)} records.")
+            self.logger.debug(f"Retrieved {len(response_decoded)} records.")
 
             return response_decoded
         except Exception as e:

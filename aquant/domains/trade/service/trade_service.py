@@ -3,11 +3,8 @@ from datetime import datetime
 import pandas as pd
 
 from aquant.core.logger import Logger
+from aquant.domains.trade.codecs import TradeParserService, TradePayloadBuilderService
 from aquant.domains.trade.entity import OpenHighLowCloseVolume
-from aquant.domains.trade.service.trade_parser_service import TradeParserService
-from aquant.domains.trade.service.trade_payload_builder_service import (
-    TradePayloadBuilderService,
-)
 from aquant.domains.trade.utils.enums import TimescaleIntervalEnum
 from aquant.domains.trade.utils.parse_trades_binary_to_dataframe import (
     ohlcv_to_df,

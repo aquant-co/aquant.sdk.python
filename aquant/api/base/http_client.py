@@ -52,7 +52,7 @@ class HTTPClient(HTTPClientInterface):
         Internal method to handle HTTP requests dynamically.
         """
         try:
-            self.logger.info(
+            self.logger.debug(
                 f"HTTP {
                     method.upper()} Request: URL={url}, Headers={headers}, Params={params}, Body={
                     json or data}"
@@ -70,7 +70,7 @@ class HTTPClient(HTTPClientInterface):
 
             response.raise_for_status()
 
-            self.logger.info(
+            self.logger.debug(
                 f"HTTP {
                     method.upper()} Response: Status={
                     response.status_code}, Body={

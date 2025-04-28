@@ -3,6 +3,7 @@ import sys
 
 from aquant.core.logger.logger_formatter import LoggerFormatter
 from aquant.core.logger.logger_interface import LoggerInterface
+from aquant.settings import settings
 
 
 class Logger(LoggerInterface):
@@ -17,18 +18,22 @@ class Logger(LoggerInterface):
         Args:
             name (str): Logger name, typically the module name.
         """
+        level = (
+            settings.LOG_LEVEL
+            if isinstance(settings.LOG_LEVEL, int)
+            else getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
+        )
+
         self.logger = logging.getLogger(name)
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(level)
         self.logger.propagate = False
 
-        # Formatter for structured logs
         formatter = LoggerFormatter()
 
-        # Console handler
         handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(formatter)
+        handler.setLevel(level)
 
-        # Avoid duplicate handlers
         if not self.logger.hasHandlers():
             self.logger.addHandler(handler)
 
@@ -39,7 +44,7 @@ class Logger(LoggerInterface):
         Args:
             message (str): Log message.
         """
-        self.logger.info(message)
+        self.logger.debug(message)
 
     def error(self, message: str) -> None:
         """

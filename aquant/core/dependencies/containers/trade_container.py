@@ -1,14 +1,14 @@
 from dependency_injector import containers, providers
 
 from aquant.core.dependencies.providers import create_logger_provider, init_nats_client
-from aquant.domains.trade.service import (
+from aquant.domains.trade.codecs import (
     OpenHighLowCloseVolumeBinaryCodec,
     TradeBinaryCodec,
     TradeBinaryRequestCodec,
     TradeParserService,
     TradePayloadBuilderService,
-    TradeService,
 )
+from aquant.domains.trade.service import TradeService
 
 
 class TradeContainer(containers.DeclarativeContainer):

@@ -1,13 +1,13 @@
 from typing import Union
 
 from aquant.core.logger import Logger
-from aquant.domains.trade.dtos import TradeDTO
-from aquant.domains.trade.entity import OpenHighLowCloseVolume, Trade
-from aquant.domains.trade.service import (
+from aquant.domains.trade.codecs import (
     OpenHighLowCloseVolumeBinaryCodec,
     TradeBinaryCodec,
     TradeBinaryRequestCodec,
 )
+from aquant.domains.trade.dtos import TradeDTO
+from aquant.domains.trade.entity import OpenHighLowCloseVolume, Trade
 
 Parsed = Union[Trade, OpenHighLowCloseVolume]  # noqa: UP007
 

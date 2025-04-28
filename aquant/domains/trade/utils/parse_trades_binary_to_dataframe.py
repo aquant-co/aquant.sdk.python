@@ -3,13 +3,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from aquant.domains.trade.entity import Trade
-
 logger = logging.getLogger("TradeService")
-
-
-def trades_to_df(trades: list[Trade]) -> pd.DataFrame:
-    return pd.DataFrame([t.__dict__ for t in trades])
 
 
 def ohlcv_to_df(blob: bytes) -> pd.DataFrame:
@@ -47,14 +41,12 @@ def parse_trades_binary_to_dataframe(binary_data: bytes) -> pd.DataFrame:
       - 1s    tick_direction (ASCII)
       - I     seller_id (uint32)
       - I     buyer_id  (uint32)
-
     Retorna um DataFrame com colunas:
       ticker, asset, fk_order_id, buyer_id, seller_id,
       price (float), quantity, side, tick_direction, event_time (datetime64[ns]).
     """
-
     n = len(binary_data)
-    logger.info(f"🔹 Received {n} bytes of binary trade-data.")
+    logger.debug(f"Received {n} bytes of binary trade-data.")
 
     dtype = np.dtype(
         [
@@ -72,44 +64,37 @@ def parse_trades_binary_to_dataframe(binary_data: bytes) -> pd.DataFrame:
     )
     rec_size = dtype.itemsize
     if n % rec_size != 0:
-        logger.warning(f"✂️  {n} não é múltiplo de {rec_size}, truncando extras.")
+        logger.warning(f"{n} bytes não é múltiplo de {rec_size}, truncando extras.")
     count = n // rec_size
 
     arr = np.frombuffer(binary_data, dtype=dtype, count=count)
-
     arr = arr.astype(arr.dtype.newbyteorder("="))
 
-    df = pd.DataFrame(arr)
+    tickers = np.char.decode(arr["ticker"], "ascii")
+    tickers = np.char.rstrip(tickers, "\x00")
+    assets = np.char.decode(arr["asset"], "ascii")
+    assets = np.char.rstrip(assets, "\x00")
+    fk_ids = np.char.decode(arr["fk_order_id"], "ascii")
+    fk_ids = np.char.rstrip(fk_ids, "\x00")
+    prices_ascii = np.char.decode(arr["price_ascii"], "ascii")
+    prices_ascii = np.char.rstrip(prices_ascii, "\x00")
+    sides = np.char.decode(arr["side"], "ascii")
+    tdirs = np.char.decode(arr["tick_direction"], "ascii")
 
-    df[["ticker", "asset", "fk_order_id", "price_ascii", "side", "tick_direction"]] = (
-        df[
-            ["ticker", "asset", "fk_order_id", "price_ascii", "side", "tick_direction"]
-        ].applymap(lambda b: b.decode("ascii", errors="ignore"))
+    df = pd.DataFrame(
+        {
+            "ticker": tickers,
+            "asset": assets,
+            "fk_order_id": fk_ids,
+            "buyer_id": arr["buyer_id"],
+            "seller_id": arr["seller_id"],
+            "price": pd.to_numeric(prices_ascii, errors="coerce"),
+            "quantity": arr["quantity"],
+            "side": sides,
+            "tick_direction": tdirs,
+            "event_time": pd.to_datetime(arr["event_time"], unit="ns"),
+        }
     )
 
-    df["ticker"] = df["ticker"].str.rstrip("\x00")
-    df["asset"] = df["asset"].str.rstrip("\x00")
-    df["fk_order_id"] = df["fk_order_id"].str.rstrip("\x00")
-    df["price_ascii"] = df["price_ascii"].str.rstrip("\x00")
-    df["side"] = df["side"].str.rstrip("\x00")
-    df["tick_direction"] = df["tick_direction"].str.rstrip("\x00")
-    df["event_time"] = pd.to_datetime(df["event_time"], unit="ns")
-    df["price"] = pd.to_numeric(df["price_ascii"], errors="coerce")
-
-    df = df[
-        [
-            "ticker",
-            "asset",
-            "fk_order_id",
-            "buyer_id",
-            "seller_id",
-            "price",
-            "quantity",
-            "side",
-            "tick_direction",
-            "event_time",
-        ]
-    ]
-
-    logger.info(f"✅ Parsed {len(df)} trades into DataFrame.")
+    logger.debug(f"Parsed {len(df)} trades into DataFrame.")
     return df

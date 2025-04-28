@@ -94,5 +94,5 @@ class TradeBinaryCodec:
             )
             self._logger.debug(f"Decoded trade #{i+1}: {trade!r}")
             trades.append(trade)
-        self._logger.info(f"Decoded {len(trades)} trades from {total} bytes")
+        self._logger.debug(f"Decoded {len(trades)} trades from {total} bytes")
         return trades

@@ -12,7 +12,7 @@ class NatsClient(NatsInterface):
     def __init__(
         self, logger: Logger, servers: list[str], user: str = None, password: str = None
     ) -> None:
-        self.log = logger
+        self.logger = logger
         self.servers = servers
         self.user = user
         self.password = password
@@ -34,7 +34,9 @@ class NatsClient(NatsInterface):
                     connect_timeout=5,
                     tls_handshake_first=True,
                 )
-                self.log.info(f"Connected to NATS servers on attempt {attempt + 1}.")
+                self.logger.debug(
+                    f"Connected to NATS servers on attempt {attempt + 1}."
+                )
                 return
             except ErrNoServers as e:
                 self.log.error(
@@ -53,7 +55,7 @@ class NatsClient(NatsInterface):
 
         try:
             await self.nc.subscribe(subject, cb=message_handler)
-            self.log.info(f"Subscribed to topic: {subject}")
+            self.logger.debug(f"Subscribed to topic: {subject}")
         except Exception as e:
             self.log.error(f"Cannot subscribe to NATS: {e}")
             raise Exception from e
@@ -64,7 +66,7 @@ class NatsClient(NatsInterface):
             if isinstance(message, str):
                 message = message.encode()
             await self.nc.publish(subject, message)
-            self.log.info(f"📤 Message published to {subject}")
+            self.logger.debug(f"📤 Message published to {subject}")
         except Exception as e:
             self.log.error(f"❌ Cannot publish to NATS: {e}")
             raise Exception from e
@@ -89,4 +91,4 @@ class NatsClient(NatsInterface):
     async def close(self):
         """Fecha a conexão com o NATS."""
         await self.nc.close()
-        self.log.info("🔌 NATS connection closed.")
+        self.logger.debug("🔌 NATS connection closed.")
