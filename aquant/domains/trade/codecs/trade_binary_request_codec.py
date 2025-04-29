@@ -1,5 +1,5 @@
 import struct
-from datetime import datetime
+from datetime import UTC, datetime
 
 from aquant.core.logger import Logger
 from aquant.domains.trade.dtos import TradeDTO, TradeParamsDTO
@@ -33,7 +33,21 @@ class TradeBinaryRequestCodec:
         return b.ljust(length, b"\x00")
 
     def _ts_ns(self, dt: datetime | None) -> int:
-        return int(dt.timestamp() * 1e9) if dt else 0
+        if not dt:
+            return 0
+
+        if dt.tzinfo is None:
+            dt_utc = dt.replace(tzinfo=UTC)
+        else:
+            dt_utc = dt.astimezone(UTC)
+
+        epoch = datetime(1970, 1, 1, tzinfo=UTC)
+        delta = dt_utc - epoch
+        return (
+            delta.days * 86_400 * 1_000_000_000
+            + delta.seconds * 1_000_000_000
+            + delta.microseconds * 1_000
+        )
 
     def encode(self, dto: TradeDTO) -> bytes:
         raw_action = dto.action
@@ -80,8 +94,10 @@ class TradeBinaryRequestCodec:
                 else (TimescaleIntervalEnum(interval_str) if interval_str else None)
             ),
             asset=ast_b.rstrip(b"\x00").decode("ascii") or None,
-            start_time=datetime.fromtimestamp(start_ns / 1e9) if start_ns else None,
-            end_time=datetime.fromtimestamp(end_ns / 1e9) if end_ns else None,
+            start_time=(
+                datetime.fromtimestamp(start_ns / 1e9, tz=UTC) if start_ns else None
+            ),
+            end_time=(datetime.fromtimestamp(end_ns / 1e9, tz=UTC) if end_ns else None),
         )
         try:
             action = Actions[action_str]

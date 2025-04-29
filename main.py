@@ -69,7 +69,7 @@ async def get_current_order_book_example():
     )
 
     try:
-        df = aquant.get_current_order_book(["DOLK25"])
+        df = aquant.get_current_order_book(["DOLK25_ASK"])
         return df
     finally:
         aquant.shutdown()
@@ -150,7 +150,7 @@ async def benchmark_trades():
         nats_password=settings.AQUANT_NATS_PASSWORD,
     )
     try:
-        start_time = datetime.now() - timedelta(days=10)
+        start_time = datetime.now() - timedelta(hours=1)
         end_time = datetime.now()
 
         execution_times = []
@@ -159,7 +159,7 @@ async def benchmark_trades():
         for _ in range(1):
             t0 = time.perf_counter()
             df = await aquant.get_trades(
-                ticker="DOLK25",
+                ticker="AMBP3",
                 # interval=TimescaleIntervalEnum.MINUTE_15,
                 start_time=start_time,
                 end_time=end_time,

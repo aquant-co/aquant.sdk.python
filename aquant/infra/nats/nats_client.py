@@ -39,7 +39,7 @@ class NatsClient(NatsInterface):
                 )
                 return
             except ErrNoServers as e:
-                self.log.error(
+                self.logger.error(
                     f"NATS servers not reachable on attempt {attempt + 1}: {e}"
                 )
                 if attempt < self.reconnect_attempts - 1:
@@ -57,7 +57,7 @@ class NatsClient(NatsInterface):
             await self.nc.subscribe(subject, cb=message_handler)
             self.logger.debug(f"Subscribed to topic: {subject}")
         except Exception as e:
-            self.log.error(f"Cannot subscribe to NATS: {e}")
+            self.logger.error(f"Cannot subscribe to NATS: {e}")
             raise Exception from e
 
     async def publish(self, subject: str, message):
@@ -68,7 +68,7 @@ class NatsClient(NatsInterface):
             await self.nc.publish(subject, message)
             self.logger.debug(f"📤 Message published to {subject}")
         except Exception as e:
-            self.log.error(f"❌ Cannot publish to NATS: {e}")
+            self.logger.error(f"❌ Cannot publish to NATS: {e}")
             raise Exception from e
 
     async def request(self, subject: str, message, timeout: float = 2.0):
@@ -82,10 +82,10 @@ class NatsClient(NatsInterface):
             return response.data
 
         except ErrTimeout:
-            self.log.error(f"Request to {subject} timed out.")
+            self.logger.error(f"Request to {subject} timed out.")
             return None
         except Exception as e:
-            self.log.error(f"Error in request-response: {e}")
+            self.logger.error(f"Error in request-response: {e}")
             raise Exception from e
 
     async def close(self):
