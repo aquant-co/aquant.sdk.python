@@ -52,7 +52,7 @@ class OpenHighLowCloseVolumeBinaryCodec:
             )
         return out
 
-    def parse_ohlcv_binary_into_dataframe(blob: bytes) -> pd.DataFrame:
+    def parse_ohlcv_binary_into_dataframe(self, blob: bytes) -> pd.DataFrame:
         dtype = np.dtype(
             [
                 ("ticker", "S10"),
