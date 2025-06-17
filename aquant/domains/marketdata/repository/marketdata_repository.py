@@ -42,7 +42,8 @@ class MarketdataRepository:
             "fk_order_id": [],
         }
 
-        for entry in entries_list[:max_entries]:
+        limit = None if max_entries == -1 else max_entries
+        for entry in entries_list[:limit]:
             try:
                 date_str = entry["entry_date"]
                 t_int = entry["entry_time"]
