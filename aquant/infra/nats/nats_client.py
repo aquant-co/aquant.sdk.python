@@ -2,7 +2,8 @@ import asyncio
 import ssl
 
 from nats.aio.client import Client as Nats
-from nats.aio.errors import ErrNoServers, ErrTimeout
+from nats.aio.errors import ErrNoServers
+from nats.errors import TimeoutError
 
 from aquant.core.logger import Logger
 from aquant.infra.nats.nats_interface import NatsInterface
@@ -81,7 +82,7 @@ class NatsClient(NatsInterface):
 
             return response.data
 
-        except ErrTimeout:
+        except TimeoutError:
             self.logger.error(f"Request to {subject} timed out.")
             return None
         except Exception as e:
