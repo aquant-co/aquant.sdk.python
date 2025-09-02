@@ -82,9 +82,9 @@ class NatsClient(NatsInterface):
 
             return response.data
 
-        except TimeoutError:
+        except TimeoutError as e:
             self.logger.error(f"Request to {subject} timed out.")
-            return None
+            raise Exception from e
         except Exception as e:
             self.logger.error(f"Error in request-response: {e}")
             raise Exception from e
